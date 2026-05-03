@@ -1,11 +1,11 @@
 import { Octokit } from "@octokit/rest";
 
-const BINARY_EXTENSIONS = new set([
+const BINARY_EXTENSIONS = new Set([
     '.png','.jpeg','.jpg','.gif','.webp',
     '.pdf','.mp3','.mp4','ico','.zip','.woff','.exe','.woff2', '.ttf',
 ])
 
-const DEFAULT_IGNORE = new set([
+const DEFAULT_IGNORE = new Set([
   'node_modules', '.git', 'dist', 'build',
   '.next', '__pycache__', 'package-lock.json',
   'yarn.lock', 'pnpm-lock.yaml',
@@ -37,12 +37,12 @@ export async function fetchRepoMeta(owner , repo, branch ) {
 }
 
 export async function fetchRepoTree(owner , repo , branch) {
-    const octokit = new octokit({auth : process.env.GITHUB_TOKEN})
+    const octokit = new Octokit({auth : process.env.GITHUB_TOKEN})
 
     let ref = branch
     if(!ref){
         const {data} = await octokit.repos.get({owner,repo})
-        ref = data.defaultBranch
+        ref = data.default_branch
     }
 
     const {data} = await octokit.git.getTree({

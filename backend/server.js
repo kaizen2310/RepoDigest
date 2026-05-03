@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import digestRoutes from './routes/digest.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -13,6 +14,7 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 app.use(express.json())
+app.use('/api/digest',digestRoutes)
 
 app.get('/api/health' , (req,res) => {
     res.json({
@@ -21,14 +23,14 @@ app.get('/api/health' , (req,res) => {
     })
 })
 
-console.log("ENV FILE LOADED?");
+// console.log("ENV FILE LOADED?");
 
-console.log("MONGO_URI:", process.env.MONGO_URI);
+// console.log("MONGO_URI:", process.env.MONGO_URI);
 
-if (!process.env.MONGO_URI) {
-    console.error('Missing MONGO_URI in environment. Check backend/.env encoding and value.')
-    process.exit(1)
-}
+// if (!process.env.MONGO_URI) {
+//     console.error('Missing MONGO_URI in environment. Check backend/.env encoding and value.')
+//     process.exit(1)
+// }
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
