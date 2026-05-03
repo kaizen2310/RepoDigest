@@ -1,122 +1,112 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import RepoInput from './components/RepoInput'
+import FileTree from './components/FileTree'
+import DigestOutput from './components/DigestOutput'
+import { fetchRepoTree, generateDigest } from './services/api'
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+const STEPS = {
+  IDLE: 'idle',
+  TREE: 'tree',
+  DIGEST: 'digest'
 }
 
-export default App
+export default function App() {
+  const [step, setStep] = useState(STEPS.IDLE)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [treeData, setTreeData] = useState(null)
+  const [digestResult, setDigestResult] = useState(null)
+
+  async function handleUrlSubmit(url) {
+    setError('')
+    setLoading(true)
+    try {
+      const data = await fetchRepoTree(url)
+      setTreeData(data)
+      setStep(STEPS.TREE)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to fetch repo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGenerate(selectedFiles) {
+    setError('')
+    setLoading(true)
+    try {
+      const result = await generateDigest({
+        owner: treeData.owner,
+        repo: treeData.repo,
+        ref: treeData.ref,
+        files: selectedFiles,
+      })
+      setDigestResult(result)
+      setStep(STEPS.DIGEST)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to generate digest')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function reset() {
+    setStep(STEPS.IDLE)
+    setTreeData(null)
+    setDigestResult(null)
+    setError('')
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
+      <header style={{ borderBottom: '1px solid #eee', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 600, fontSize: 18 }}>RepoDigest</span>
+        {step !== STEPS.IDLE && (
+          <button onClick={reset} style={{ fontSize: 13, padding: '5px 12px', cursor: 'pointer' }}>
+            ← New repo
+          </button>
+        )}
+      </header>
+
+      <main style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
+        {step === STEPS.IDLE && (
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: 32, fontWeight: 600, marginBottom: 8 }}>
+              Ingest any GitHub repo
+            </h1>
+            <p style={{ color: '#666', marginBottom: 32 }}>
+              Paste a GitHub URL, select files, copy the digest into any LLM.
+            </p>
+            <RepoInput onSubmit={handleUrlSubmit} loading={loading} />
+          </div>
+        )}
+
+        {error && (
+          <div style={{ padding: '12px 16px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', marginTop: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {step === STEPS.TREE && treeData && (
+          <FileTree
+            files={treeData.files}
+            meta={treeData.meta}
+            owner={treeData.owner}
+            repo={treeData.repo}
+            ref={treeData.ref}
+            onGenerate={handleGenerate}
+            loading={loading}
+          />
+        )}
+
+        {step === STEPS.DIGEST && digestResult && (
+          <DigestOutput
+            result={digestResult}
+            owner={treeData.owner}
+            repo={treeData.repo}
+          />
+        )}
+      </main>
+    </div>
+  )
+}
