@@ -17,6 +17,6 @@ export async function generateDigest({owner,repo,ref,files}) {
 }
 
 export async function fetchDigestById(id) {
-    const {data} = await api.get(`/digest/${id}`)
-    const data
+  const { data } = await api.get(`/digest/${id}`)
+  return data
 }
