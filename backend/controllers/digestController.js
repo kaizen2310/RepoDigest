@@ -1,6 +1,6 @@
-import { parseGithubUrl,fetchRepoTree,fetchRepoMeta } from '../services/githubServices.js';
-import { generateDigest } from '../services/digestServices.js';
-import digest from '../models/digest.js';
+import { parseGithubUrl, fetchRepoTree, fetchRepoMeta } from '../services/githubService.js'
+import { generateDigest } from '../services/digestService.js'
+import Digest from '../models/Digest.js'
 
 export async function getRepoTree(req,res) {
     try{
@@ -64,6 +64,7 @@ export async function generateRepoDigest(req,res) {
         })
 
     }catch(err){
+        console.error('GENERATE ERROR:', err)
         res.status(500).json({error : err.message})
     }
 }
