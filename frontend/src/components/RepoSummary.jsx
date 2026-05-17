@@ -1,95 +1,129 @@
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+
+import {
+  Star,
+  GitFork,
+  Files,
+  FileCodeCorner,
+  Binary,
+  BookCheck,
+} from "lucide-react"
+
 export default function RepoSummary({ treeData, digestResult }) {
   const { owner, repo, ref, files, meta } = treeData
   const { tokenCount, fileCount } = digestResult
 
   const TOKEN_LIMIT = 300000
   const overLimit = tokenCount > TOKEN_LIMIT
-  const pct = Math.min(100, Math.round((tokenCount / TOKEN_LIMIT) * 100))
+
+  const pct = Math.min(
+    100,
+    Math.round((tokenCount / TOKEN_LIMIT) * 100)
+  )
 
   return (
-    <div style={{
-      background: '#fff',
-      borderBottom: '1px solid #e5e5e5',
-      padding: '12px 24px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 24,
-      flexWrap: 'wrap',
-      fontSize: 13,
-    }}>
+  <Card className="rounded-none border-x-0 border-t-0 shadow-none bg-white">
+    
+    <CardContent className="flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
 
-      {/* Repo name */}
-      <div>
-        <span style={{ fontWeight: 700, fontSize: 15 }}>{owner}/</span>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#444' }}>{repo}</span>
+      {/* LEFT SIDE */}
+      <div className="flex flex-col gap-3">
+
+        {/* Repo title */}
+        <div className="flex flex-col">
+
+          <span className="text-xl font-bold tracking-tight">
+            {owner}
+            <span className="text-muted-foreground">
+              /{repo}
+            </span>
+          </span>
+
+          {meta.description && (
+            <span className="max-w-[700px] text-sm text-muted-foreground">
+              {meta.description}
+            </span>
+          )}
+
+        </div>
+
+        {/* Repo badges */}
+        <div className="flex flex-wrap items-center gap-2">
+
+          <Badge variant="secondary">
+            <GitFork className="mr-1 h-3 w-3" />{ref}
+          </Badge>
+
+          <Badge variant="outline">
+            <Files className="mr-1 h-3 w-3" />: {files.length} Totalfiles
+          </Badge>
+
+          <Badge variant="outline">
+            <BookCheck className="mr-1 h-3 w-3" />Digested: {fileCount}
+          </Badge>
+
+          {meta.language && (
+            <Badge variant="outline">
+              <FileCodeCorner className="mr-1 h-3 w-3" />{meta.language}
+            </Badge>
+          )}
+
+          {!!meta.stars && (
+            <Badge variant="outline">
+              ⭐ {meta.stars.toLocaleString()}
+            </Badge>
+          )}
+
+        </div>
+
       </div>
 
-      <Divider />
+      {/* RIGHT SIDE */}
+      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
 
-      {/* Branch */}
-      <Pill label="Branch" value={ref} />
+        <span className="text-sm text-muted-foreground">
+          Tokens
+        </span>
 
-      {/* Total files in repo */}
-      <Pill label="Total files" value={files.length} />
-
-      {/* Files digested */}
-      <Pill label="Digested" value={fileCount} />
-
-      {/* Language */}
-      {meta.language && <Pill label="Language" value={meta.language} />}
-
-      {/* Stars */}
-      {meta.stars && <Pill label="Stars" value={`★ ${meta.stars.toLocaleString()}`} />}
-
-      <Divider />
-
-      {/* Token count + bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ color: '#666' }}>Tokens:</span>
-        <span style={{
-          fontWeight: 600,
-          color: overLimit ? '#dc2626' : '#111'
-        }}>
+        <span
+          className={`text-lg font-bold ${
+            overLimit ? 'text-red-600' : ''
+          }`}
+        >
           {tokenCount.toLocaleString()}
         </span>
-        <div style={{ width: 80, height: 5, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${pct}%`,
-            background: overLimit ? '#dc2626' : pct > 80 ? '#f59e0b' : '#10b981',
-            borderRadius: 3,
-          }} />
+
+        {/* Progress */}
+        <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+
+          <div
+            className={`h-full rounded-full ${
+              overLimit
+                ? 'bg-red-600'
+                : pct > 80
+                ? 'bg-yellow-500'
+                : 'bg-emerald-500'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+
         </div>
-        <span style={{ fontSize: 11, color: overLimit ? '#dc2626' : '#999' }}>
+
+        <span
+          className={`text-sm ${
+            overLimit
+              ? 'text-red-600'
+              : 'text-muted-foreground'
+          }`}
+        >
           {pct}% of 300k
         </span>
+
       </div>
 
-      {/* Description */}
-      {meta.description && (
-        <>
-          <Divider />
-          <span style={{ color: '#666', fontStyle: 'italic', fontSize: 12 }}>
-            {meta.description}
-          </span>
-        </>
-      )}
+    </CardContent>
 
-    </div>
-  )
-}
-
-function Pill({ label, value }) {
-  return (
-    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-      <span style={{ color: '#999' }}>{label}:</span>
-      <span style={{ fontWeight: 500, color: '#111' }}>{value}</span>
-    </div>
-  )
-}
-
-function Divider() {
-  return (
-    <div style={{ width: 1, height: 16, background: '#e5e5e5' }} />
+  </Card>
   )
 }
