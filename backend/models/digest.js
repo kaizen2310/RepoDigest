@@ -36,6 +36,6 @@ const digestSchema = new mongoose.Schema(
     }
 )
 
-digestSchema.index({owner : 1 , repo :1 , ref :1})
+digestSchema.index({owner : 1 , repo :1 , ref :1, createdAt: -1})//caching
 
 export default mongoose.model('Digest', digestSchema)

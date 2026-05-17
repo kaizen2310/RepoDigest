@@ -9,6 +9,6 @@ const router = Router()
 
 router.post('/tree',getRepoTree)
 router.post('/generate',generateRepoDigest)
-router.post('/:id',getDigestById)
+router.get('/:id',getDigestById)
 
 export default router
