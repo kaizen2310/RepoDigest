@@ -1,21 +1,60 @@
 import { useState, useMemo } from 'react'
 
-export default function FileTree({ files, meta, owner, repo, ref, onGenerate, loading }) {
-  const [selected, setSelected] = useState(new Set(files))
+import {
+  Folder,
+  FileText,
+  Search,
+  Sparkles,
+} from "lucide-react"
+
+import { Card, CardContent } from "@/components/ui/card"
+
+import { Input } from "@/components/ui/input"
+
+import { Button } from "@/components/ui/button"
+
+import { Badge } from "@/components/ui/badge"
+
+export default function FileTree({
+  files,
+  meta,
+  owner,
+  repo,
+  ref,
+  onGenerate,
+  loading
+}) {
+
+  const [selected, setSelected] = useState(
+    new Set(files)
+  )
+
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
+
     return files.filter((f) =>
-      f.toLowerCase().includes(search.toLowerCase())
+      f.toLowerCase().includes(
+        search.toLowerCase()
+      )
     )
+
   }, [files, search])
 
   function toggleFile(file) {
+
     setSelected((prev) => {
+
       const next = new Set(prev)
-      next.has(file) ? next.delete(file) : next.add(file)
+
+      next.has(file)
+        ? next.delete(file)
+        : next.add(file)
+
       return next
+
     })
+
   }
 
   function selectAll() {
@@ -26,106 +65,194 @@ export default function FileTree({ files, meta, owner, repo, ref, onGenerate, lo
     setSelected(new Set())
   }
 
-  const estimatedTokens = Math.ceil(selected.size * 200 / 4)
+  const estimatedTokens = Math.ceil(
+    selected.size * 200 / 4
+  )
 
   return (
-    <div>
-      {/* Repo info strip */}
-      <div style={{ marginBottom: 16 }}>
-        <span style={{ fontWeight: 600 }}>{owner}/{repo}</span>
-        <span style={{ color: '#888', fontSize: 13, marginLeft: 10 }}>
-          {ref} · {files.length} files
-        </span>
-        {meta.description && (
-          <p style={{ color: '#666', fontSize: 13, marginTop: 4 }}>
-            {meta.description}
-          </p>
-        )}
-        <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: 13, color: '#888' }}>
-          {meta.language && <span>● {meta.language}</span>}
-          {meta.stars && <span>★ {meta.stars.toLocaleString()}</span>}
+
+    <Card className="h-full">
+
+      <CardContent className="flex h-full flex-col p-4">
+
+        {/* HEADER */}
+        <div className="mb-5 flex flex-col gap-3">
+
+          {/* Repo */}
+          <div>
+
+            <div className="flex items-center gap-2">
+
+              <Folder className="h-5 w-5 text-muted-foreground" />
+
+              <span className="text-lg font-bold tracking-tight">
+                {owner}
+                <span className="text-muted-foreground">
+                  /{repo}
+                </span>
+              </span>
+
+            </div>
+
+            {meta.description && (
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                {meta.description}
+              </p>
+
+            )}
+
+          </div>
+
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+
+            <Badge variant="secondary">
+              {ref}
+            </Badge>
+
+            <Badge variant="outline">
+              {files.length} files
+            </Badge>
+
+            {meta.language && (
+
+              <Badge variant="outline">
+                {meta.language}
+              </Badge>
+
+            )}
+
+            {!!meta.stars && (
+
+              <Badge variant="outline">
+                ⭐ {meta.stars.toLocaleString()}
+              </Badge>
+
+            )}
+
+          </div>
+
         </div>
-      </div>
 
-      {/* Controls */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <input
-          type="text"
-          placeholder="Filter files..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 1,
-            padding: '7px 12px',
-            fontSize: 13,
-            border: '1px solid #ddd',
-            borderRadius: 6,
-            fontFamily: 'inherit',
-          }}
-        />
-        <button onClick={selectAll} style={ghostBtn}>Select all</button>
-        <button onClick={clearAll} style={ghostBtn}>Clear</button>
-      </div>
+        {/* SEARCH + CONTROLS */}
+        <div className="mb-4 flex flex-col gap-2">
 
-      {/* File list */}
-      <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, marginBottom: 16, maxHeight: 400, overflowY: 'auto' }}>
-        {filtered.map((file) => (
-          <label
-            key={file}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '7px 12px',
-              cursor: 'pointer',
-              borderBottom: '1px solid #f5f5f5',
-              background: selected.has(file) ? '#f9f9ff' : 'transparent',
-              fontSize: 13,
-              fontFamily: 'monospace',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(file)}
-              onChange={() => toggleFile(file)}
+          {/* Search */}
+          <div className="relative">
+
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+            <Input
+              type="text"
+              placeholder="Filter files..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              className="pl-9"
             />
-            {file}
-          </label>
-        ))}
-      </div>
 
-      {/* Footer */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, color: '#666' }}>
-          {selected.size} of {files.length} files · ~{estimatedTokens.toLocaleString()} tokens
-        </span>
-        <button
-          onClick={() => onGenerate([...selected])}
-          disabled={loading || selected.size === 0}
-          style={{
-            padding: '9px 20px',
-            background: selected.size === 0 || loading ? '#ccc' : '#1a1a1a',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: selected.size === 0 || loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {loading ? 'Generating...' : 'Generate digest'}
-        </button>
-      </div>
-    </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2">
+
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={selectAll}
+            >
+              Select all
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={clearAll}
+            >
+              Clear
+            </Button>
+
+          </div>
+
+        </div>
+
+        {/* FILE LIST */}
+        <div className="mb-4 flex-1 overflow-auto rounded-lg border bg-background">
+
+          {filtered.map((file) => (
+
+            <label
+              key={file}
+              className={`flex cursor-pointer items-center gap-3 border-b px-3 py-2 text-sm transition-colors hover:bg-muted/50 ${
+                selected.has(file)
+                  ? 'bg-muted'
+                  : ''
+              }`}
+            >
+
+              <input
+                type="checkbox"
+                checked={selected.has(file)}
+                onChange={() => toggleFile(file)}
+                className="h-4 w-4"
+              />
+
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+
+              <span className="truncate font-mono">
+                {file}
+              </span>
+
+            </label>
+
+          ))}
+
+        </div>
+
+        {/* FOOTER */}
+        <div className="flex flex-col gap-3 border-t pt-4">
+
+          {/* Stats */}
+          <div className="flex items-center justify-between text-sm">
+
+            <span className="text-muted-foreground">
+
+              {selected.size} of {files.length} files selected
+
+            </span>
+
+            <span className="font-medium">
+
+              ~{estimatedTokens.toLocaleString()} tokens
+
+            </span>
+
+          </div>
+
+          {/* Generate button */}
+          <Button
+            onClick={() => onGenerate([...selected])}
+            disabled={loading || selected.size === 0}
+            className="w-full"
+          >
+
+            <Sparkles className="mr-2 h-4 w-4" />
+
+            {loading
+              ? 'Generating...'
+              : 'Generate Digest'
+            }
+
+          </Button>
+
+        </div>
+
+      </CardContent>
+
+    </Card>
+
   )
-}
 
-const ghostBtn = {
-  padding: '7px 12px',
-  background: '#f5f5f5',
-  border: 'none',
-  borderRadius: 6,
-  fontSize: 13,
-  cursor: 'pointer',
-  fontFamily: 'inherit',
 }
