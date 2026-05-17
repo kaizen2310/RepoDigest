@@ -47,7 +47,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif', background: '#080808' }}>
+    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif', background: '#f5eeee' }}>
 
       {/* Header */}
       <header style={{
@@ -96,11 +96,11 @@ export default function App() {
           <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 12 }}>
             Ingest any GitHub repo
           </h1>
-          <p style={{ color: '#666', fontSize: 16, marginBottom: 0 }}>
+          <p style={{ color: '#111110', fontSize: 16, marginBottom: 0 }}>
             Paste a GitHub URL above and get an LLM-ready digest instantly.
           </p>
           {loading && (
-            <p style={{ color: '#888', marginTop: 24, fontSize: 14 }}>
+            <p style={{ color: '#191818', marginTop: 24, fontSize: 14 }}>
               Fetching repo and generating digest...
             </p>
           )}
