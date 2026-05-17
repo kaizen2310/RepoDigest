@@ -1,4 +1,10 @@
 import { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+
+import {
+  Copy,
+} from "lucide-react"
 
 function buildTree(filePaths) {
   const tree = {}
@@ -39,51 +45,33 @@ export default function DirectoryTree({ files }) {
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-
+    <Card className="h-full">
+      <CardContent className="flex h-full flex-col p-4">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 600 }}>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold">
           Directory structure
         </span>
-        <button onClick={copyTree} style={{
-          fontSize: 11,
-          padding: '4px 10px',
-          background: copied ? '#10b981' : '#f0f0f0',
-          color: copied ? '#fff' : '#333',
-          border: 'none',
-          borderRadius: 4,
-          cursor: 'pointer',
-          fontFamily: 'inherit'
-        }}>
-          {copied ? '✓ Copied' : 'Copy tree'}
-        </button>
+        <Button
+          size="sm"
+          variant={copied ? "default" : "secondary"}
+          onClick={copyTree}
+        >
+          <>
+            <copy className="mr-1 h-3 w-3"/>
+            {copied ? '✓ Copied' : 'Copy tree'}
+          </>
+        </Button>
       </div>
 
       {/* Tree */}
-      <pre style={{
-        flex: 1,
-        margin: 0,
-        padding: 12,
-        background: '#fff',
-        border: '1px solid #e5e5e5',
-        borderRadius: 6,
-        fontSize: 11,
-        fontFamily: 'ui-monospace, Menlo, Monaco, monospace',
-        lineHeight: 1.6,
-        overflowY: 'auto',
-        whiteSpace: 'pre',
-        textAlign:'left',
-        color: '#333'
-      }}>
+      <pre className="flex-1 overflow-auto rounded-md border
+        bg-muted p-3 text-left font-mono text-xs
+        leading-6 text-foreground">
         {treeText}
       </pre>
 
-    </div>
+      </CardContent>
+    </Card>
   )
 }
