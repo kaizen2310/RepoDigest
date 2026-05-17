@@ -1,5 +1,6 @@
 import {Router} from 'express'
 import {
+    generateFullRepoDigest,
     generateRepoDigest,
     getRepoTree,
     getDigestById
@@ -8,7 +9,8 @@ import {
 const router = Router()
 
 router.post('/tree',getRepoTree)
+router.post('/full',generateFullRepoDigest)
 router.post('/generate',generateRepoDigest)
-router.post('/:id',getDigestById)
+router.get('/:id',getDigestById)
 
 export default router

@@ -10,6 +10,11 @@ export async function fetchRepoTree(url) {
     return data
 }
 
+export async function generateFullDigest(url) {
+    const {data} = await api.post('/digest/full' ,{url})
+    return data
+}
+
 
 export async function generateDigest({owner,repo,ref,files}) {
     const {data} = await api.post('/digest/generate',{owner,repo,ref,files})

@@ -14,7 +14,14 @@ dotenv.config({ path: path.join(__dirname, '.env'), override: true })
 const app = express()
 const PORT = process.env.PORT || 5000
 
-app.use(cors({ origin: 'http://localhost:5173' }))  // for core
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || /^http:\/\/localhost:517\d$/.test(origin)) {
+            return callback(null, true)
+        }
+        return callback(new Error('Not allowed by CORS'))
+    }
+}))
 app.use(express.json())
 app.use('/api/digest',digestRoutes)
 

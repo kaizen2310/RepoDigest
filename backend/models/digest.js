@@ -14,6 +14,9 @@ const digestSchema = new mongoose.Schema(
             type : String,
             required : true
         },
+        filesHash :{
+            type : String
+        },
         digest :{
             type : String,
             required : true
@@ -36,6 +39,6 @@ const digestSchema = new mongoose.Schema(
     }
 )
 
-digestSchema.index({owner : 1 , repo :1 , ref :1})
+digestSchema.index({owner : 1 , repo :1 , ref :1, filesHash :1})
 
 export default mongoose.model('Digest', digestSchema)

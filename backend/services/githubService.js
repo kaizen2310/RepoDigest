@@ -2,7 +2,7 @@ import { Octokit } from "@octokit/rest";
 
 const BINARY_EXTENSIONS = new Set([
     '.png','.jpeg','.jpg','.gif','.webp',
-    '.pdf','.mp3','.mp4','ico','.zip','.woff','.exe','.woff2', '.ttf',
+    '.pdf','.mp3','.mp4','.ico','.zip','.woff','.exe','.woff2', '.ttf',
 ])
 
 const DEFAULT_IGNORE = new Set([
@@ -18,7 +18,7 @@ export function parseGithubUrl(url){
     if(!match) throw new Error(`Invalid Github URL entered`)
     return{
         owner : match[1],
-        repo : match[2].replace('git',''),
+        repo : match[2].replace(/\.git$/, ''),
         branch : match[3] || null
     }    
 }
@@ -31,7 +31,7 @@ export async function fetchRepoMeta(owner , repo, branch ) {
         description : data.description,
         stars : data.stargazers_count,
         language : data.language,
-        license : data.license?.spdx_i||null,
+        license : data.license?.spdx_id||null,
         defaultBranch : data.default_branch,
    }
 }
