@@ -9,6 +9,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.29.2",
   "dependencies": {
+    "@google/genai": "^2.6.0",
     "@octokit/rest": "^22.0.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

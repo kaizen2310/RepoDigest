@@ -33,53 +33,60 @@ export function buildDirectoryTree(filePaths){
     return render(tree)
 }
 
-export async function generateDigest(owner ,repo ,filePaths ,ref) {
-    const BATCH_SIZE = 10
-    const results =[]
-    const skipped = []
-    for(let i = 0 ; i < filePaths.length; i+=BATCH_SIZE){
-        const batch = filePaths.slice(i,i+BATCH_SIZE)
-        const fetched = await Promise.all(
-            batch.map(async (path) => {
-                try {
-                    const content  = await fetchFileContent(owner ,repo,path , ref)
-                    return{path ,content}
-                } catch{
-                    skipped.push(path)
-                    return null
-                }
-            })
-        )
-        results.push(...fetched.filter(Boolean))
-    }
+export async function generateDigest(owner, repo, filePaths, ref) {
+  const BATCH_SIZE = 10
+  const results = []
+  const skipped = []
 
-    const treeString = buildDirectoryTree(filePaths)
+  for (let i = 0; i < filePaths.length; i += BATCH_SIZE) {
+    const batch = filePaths.slice(i, i + BATCH_SIZE)
+    const fetched = await Promise.all(
+      batch.map(async (path) => {
+        try {
+          const content = await fetchFileContent(owner, repo, path, ref)
+          return { path, content }
+        } catch {
+          skipped.push(path)
+          return null
+        }
+      })
+    )
+    results.push(...fetched.filter(Boolean))
+  }
 
-    const header = [
-        `=======================================================`,
-        `Repository : ${owner}/${repo}`,
-        `Branch / Ref : ${ref}`,
-        `Generated : ${new Date().toISOString()}`,
-        `files;     ${results.length} included, ${skipped.length} skipped`,
-        `========================================================`,
-        ``,
-        `DIRECTORY STRUCTURE`,
-        `--------------------`,
-        treeString,
-        ``,
+  const treeString = buildDirectoryTree(filePaths)
+
+  const header = [
+    `================================================================`,
+    `Repository: ${owner}/${repo}`,
+    `Branch/Ref: ${ref}`,
+    `Generated:  ${new Date().toISOString()}`,
+    `Files:      ${results.length} included, ${skipped.length} skipped`,
+    `================================================================`,
+    ``,
+    `DIRECTORY STRUCTURE`,
+    `-------------------`,
+    treeString,
+    ``,
+  ].join('\n')
+
+  const fileSections = results.map(({ path, content }) =>
+    [
+      `================================================================`,
+      `FILE: ${path}`,
+      `================================================================`,
+      content,
     ].join('\n')
+  ).join('\n\n')
 
-    const fileSections = results.map(({path, content}) =>
-        [
-            `====================================================`,
-            `FILE : ${path}`,
-            `====================================================`,
-            content,
-        ].join('\n')
-    ).join('\n\n')
+  const digest = header + '\n' + fileSections
+  const tokenCount = estimatedTokens(digest)
 
-    const digest = header + '\n' + fileSections
-    const tokenCount = estimatedTokens(digest)
-
-    return {digest ,tokenCount ,fileCount : results.length ,skipped}
+  return {
+    digest,
+    tokenCount,
+    fileCount: results.length,
+    skipped,
+    rawFiles: results   // ← add this
+  }
 }
