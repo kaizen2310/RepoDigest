@@ -2,12 +2,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 import {
-  Star,
   GitFork,
   Files,
-  FileCodeCorner,
-  Binary,
+  FileCode2,
   BookCheck,
+  Star,
 } from "lucide-react"
 
 export default function RepoSummary({ treeData, digestResult }) {
@@ -25,15 +24,15 @@ export default function RepoSummary({ treeData, digestResult }) {
   return (
   <Card className="rounded-none border-x-0 border-t-0 shadow-none bg-white">
     
-    <CardContent className="flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+    <CardContent className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
 
       {/* LEFT SIDE */}
-      <div className="flex flex-col gap-3">
+      <div className="min-w-0 flex flex-col gap-3">
 
         {/* Repo title */}
         <div className="flex flex-col">
 
-          <span className="text-xl font-bold tracking-tight">
+          <span className="break-words text-xl font-bold tracking-tight">
             {owner}
             <span className="text-muted-foreground">
               /{repo}
@@ -41,7 +40,7 @@ export default function RepoSummary({ treeData, digestResult }) {
           </span>
 
           {meta.description && (
-            <span className="max-w-[700px] text-sm text-muted-foreground">
+            <span className="max-w-[700px] text-sm leading-6 text-muted-foreground">
               {meta.description}
             </span>
           )}
@@ -56,7 +55,7 @@ export default function RepoSummary({ treeData, digestResult }) {
           </Badge>
 
           <Badge variant="outline">
-            <Files className="mr-1 h-3 w-3" />: {files.length} Totalfiles
+            <Files className="mr-1 h-3 w-3" />{files.length} total files
           </Badge>
 
           <Badge variant="outline">
@@ -65,13 +64,13 @@ export default function RepoSummary({ treeData, digestResult }) {
 
           {meta.language && (
             <Badge variant="outline">
-              <FileCodeCorner className="mr-1 h-3 w-3" />{meta.language}
+              <FileCode2 className="mr-1 h-3 w-3" />{meta.language}
             </Badge>
           )}
 
           {!!meta.stars && (
             <Badge variant="outline">
-              ⭐ {meta.stars.toLocaleString()}
+              <Star className="mr-1 h-3 w-3" />{meta.stars.toLocaleString()}
             </Badge>
           )}
 
@@ -80,7 +79,7 @@ export default function RepoSummary({ treeData, digestResult }) {
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/30 px-4 py-3">
 
         <span className="text-sm text-muted-foreground">
           Tokens

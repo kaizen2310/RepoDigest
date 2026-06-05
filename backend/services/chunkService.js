@@ -4,11 +4,15 @@ function estimateTokens(text) {
 
 const CHUNK_TOKENS = 500
 const OVERLAP_TOKENS = 100
+const MAX_CHUNK_CHARS = 8000
 
 export function chunkFiles(files) {
   const chunks = []
 
   for (const file of files) {
+    // skip files with no content
+    if (!file.content || file.content.trim() === '') continue
+
     const lines = file.content.split('\n')
     let currentLines = []
     let currentTokens = 0
@@ -23,15 +27,12 @@ export function chunkFiles(files) {
 
         chunks.push({
           filePath: file.path,
-          text: chunkText,
+          text: chunkText.slice(0, MAX_CHUNK_CHARS),  // ← use safeText
           startLine,
           endLine: i - 1,
           tokens: currentTokens,
         })
 
-        // overlap by tokens not lines
-        // walk backwards from end of current chunk
-        // until we have collected OVERLAP_TOKENS worth
         let overlapLines = []
         let overlapTokens = 0
 
@@ -51,11 +52,11 @@ export function chunkFiles(files) {
       currentTokens += lineTokens
     }
 
-    // save final chunk
     if (currentLines.length > 0) {
+      const chunkText = `File: ${file.path}\n\n${currentLines.join('\n')}`
       chunks.push({
         filePath: file.path,
-        text: `File: ${file.path}\n\n${currentLines.join('\n')}`,
+        text: chunkText.slice(0, MAX_CHUNK_CHARS),  // ← final chunk also safe
         startLine,
         endLine: lines.length - 1,
         tokens: currentTokens,

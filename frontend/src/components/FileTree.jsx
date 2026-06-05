@@ -5,6 +5,7 @@ import {
   FileText,
   Search,
   Sparkles,
+  Star,
 } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -126,7 +127,7 @@ export default function FileTree({
             {!!meta.stars && (
 
               <Badge variant="outline">
-                ⭐ {meta.stars.toLocaleString()}
+                <Star className="mr-1 h-3 w-3" />{meta.stars.toLocaleString()}
               </Badge>
 
             )}

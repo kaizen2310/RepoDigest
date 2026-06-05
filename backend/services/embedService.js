@@ -19,7 +19,7 @@ function getGenAI() {
   return genAI
 }
 
-export async function embedText(text) {
+async function embedText(text) {
   const result = await getGenAI().models.embedContent({
     model: EMBEDDING_MODEL,
     contents: text,
@@ -29,6 +29,19 @@ export async function embedText(text) {
   return values
 }
 
+//expoenetial backoff if fails tries with exponential increment wait time
+async function embedWithRetry(text, retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await embedText(text)
+    } catch (err) {
+      if (attempt === retries - 1) throw err
+      const wait = 1000 * Math.pow(2, attempt)
+      console.warn(`Embed failed (attempt ${attempt + 1}), retrying in ${wait}ms...`)
+      await sleep(wait)
+    }
+  }
+}
 
 export async function embedChunks(chunks) {
   const embedded = []
@@ -39,7 +52,7 @@ export async function embedChunks(chunks) {
     try {
       const results = await Promise.all(
         batch.map(async (chunk) => {
-          const embedding = await embedText(chunk.text)
+          const embedding = await embedWithRetry(chunk.text)
           return { ...chunk, embedding }
         })
       )

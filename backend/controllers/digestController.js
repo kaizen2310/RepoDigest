@@ -7,7 +7,6 @@ import Chunk from '../models/chunk.js'
 
 async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
   try {
-    // Mark as processing
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'processing',
       ingestError: null
@@ -19,23 +18,29 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
     const embeddedChunks = await embedChunks(chunks)
     console.log(`Embedded ${embeddedChunks.length} chunks`)
 
-    await Chunk.deleteMany({ digestId })  // ← add this if failed remove previously stored embeddings
-    await Chunk.insertMany(
-      embeddedChunks.map((chunk) => ({
-        digestId,
-        owner,
-        repo,
-        ref,
-        filePath: chunk.filePath,
-        text: chunk.text,
-        startLine: chunk.startLine,
-        endLine: chunk.endLine,
-        tokens: chunk.tokens,
-        embedding: chunk.embedding,
-      }))
-    )
+    // delete old chunks before inserting new ones
+    await Chunk.deleteMany({ digestId })
 
-    // Mark as ready
+    // batch insertMany to avoid MongoDB 16MB document limit
+    const MONGO_BATCH = 100
+    const docs = embeddedChunks.map((chunk) => ({
+      digestId,
+      owner,
+      repo,
+      ref,
+      filePath: chunk.filePath,
+      text: chunk.text,
+      startLine: chunk.startLine,
+      endLine: chunk.endLine,
+      tokens: chunk.tokens,
+      embedding: chunk.embedding,
+    }))
+
+    for (let i = 0; i < docs.length; i += MONGO_BATCH) {
+      await Chunk.insertMany(docs.slice(i, i + MONGO_BATCH))
+      console.log(`Saved ${Math.min(i + MONGO_BATCH, docs.length)}/${docs.length} chunks to MongoDB`)
+    }
+
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'ready',
       ingestError: null
@@ -43,12 +48,25 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
     console.log(`Ingest complete for ${owner}/${repo}`)
 
   } catch (err) {
-    // Mark as failed with the error message
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'failed',
       ingestError: err.message
     })
     console.error('Chunk and embed error:', err.message)
+  }
+}
+
+export async function getDigestStatus(req, res) {
+  try {
+    const doc = await Digest.findById(req.params.id)
+      .select('ingestStatus ingestError')
+    if (!doc) return res.status(404).json({ error: 'Not found' })
+    res.json({
+      ingestStatus: doc.ingestStatus,
+      ingestError: doc.ingestError
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 }
 

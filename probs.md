@@ -18,3 +18,15 @@ Date:   Sun May 17 00:11:17 2026 +0530
 :
 
 important stable commits q
+
+
+5th problem faced was when user uploads a digest on chatbot due to high token context of attched txt file it instantly hit rate limit 
+this thing happen because when user enter new query it goes through entire attched context and burns the tokens to retrive information
+
+thats why we are implementing rag
+
+
+Right now, your app aggregates up to 300,000 tokens of raw repository text into a single frontend view and text file. While this is great for raw data extraction, dumping massive context into an LLM is expensive, slow, and prone to the "lost in the middle" phenomenon
+
+
+i have to efficiently create digest because due line wastage and  high no lines model can lead to hallucinte
