@@ -108,11 +108,28 @@ export default function App() {
               Generate clean, structured LLM-ready digests from GitHub repositories.
             </p>
             <RepoInput onSubmit={handleUrlSubmit} loading={loading} />
-            {loading && (
+            {loading ? (
+              <p className="mt-6 text-sm text-muted-foreground">
+                Fetching repository — large repos may take 10–20 seconds...
+              </p>
+            ) : (
               <div className="mt-8">
-                <span className="text-sm text-muted-foreground">
-                  Fetching repository and generating digest...
-                </span>
+                <p className="mb-3 text-xs text-muted-foreground">Try an example:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    'https://github.com/expressjs/express',
+                    'https://github.com/axios/axios',
+                    'https://github.com/vitejs/vite',
+                  ].map((repo) => (
+                    <button
+                      key={repo}
+                      onClick={() => handleUrlSubmit(repo)}
+                      className="rounded-md border bg-white px-3 py-1.5 text-xs font-mono text-muted-foreground transition-colors hover:border-zinc-400 hover:text-foreground"
+                    >
+                      {repo.replace('https://github.com/', '')}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -146,7 +163,7 @@ export default function App() {
               {/* Ingest status: fixed height, doesn't grow */}
               <div className="shrink-0 rounded-md border bg-white p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold">Backend ingest</span>
+                  <span className="text-sm font-semibold">AI Chat Status</span>
                   <IngestStatus
                     status={ingestStatus}
                     error={digestResult.ingestError}

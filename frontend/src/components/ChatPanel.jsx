@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -43,6 +43,11 @@ export default function ChatPanel({ digestId, ingestStatus }) {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const bottomRef = useRef(null)
+  useEffect(() => {
+  bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const chatReady = ingestStatus === 'ready'
 
@@ -108,9 +113,9 @@ export default function ChatPanel({ digestId, ingestStatus }) {
           </div>
         </div>
 
-        <div className="max-h-[calc(100vh-280px)] min-h-[420px] space-y-3 overflow-auto rounded-md border bg-zinc-50 p-3">
+        <div className="h-[calc(100vh-380px)] overflow-auto rounded-md border bg-zinc-50 p-3 space-y-3">
           {messages.length === 0 ? (
-            <div className="flex h-full min-h-[130px] items-center justify-center text-center text-sm text-muted-foreground">
+            <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
               Ask once indexing is ready.
             </div>
           ) : (
@@ -122,6 +127,7 @@ export default function ChatPanel({ digestId, ingestStatus }) {
               />
             ))
           )}
+          <div ref={bottomRef} />
         </div>
 
         {error && (
@@ -134,6 +140,12 @@ export default function ChatPanel({ digestId, ingestStatus }) {
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                submitQuestion(e)
+              }
+            }}
             placeholder={chatReady ? 'Ask about the codebase' : 'Indexing in progress'}
             disabled={!chatReady || loading}
             className="min-h-20 resize-none text-sm"
