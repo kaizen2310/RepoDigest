@@ -179,6 +179,7 @@ export default function App() {
                 <ChatPanel
                   digestId={digestId}
                   ingestStatus={ingestStatus}
+                  ingestError={digestResult?.ingestError}
                 />
               </div>
 

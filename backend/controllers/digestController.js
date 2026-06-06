@@ -5,6 +5,8 @@ import { embedChunks } from '../services/embedService.js'
 import Digest from '../models/digest.js'
 import Chunk from '../models/chunk.js'
 
+const MAX_CHUNKS = 500
+
 async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
   try {
     await Digest.findByIdAndUpdate(digestId, {
@@ -15,13 +17,21 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
     const chunks = chunkFiles(rawFiles)
     console.log(`Chunked into ${chunks.length} chunks`)
 
+    // check chunk limit before embedding
+    if (chunks.length > MAX_CHUNKS) {
+      await Digest.findByIdAndUpdate(digestId, {
+        ingestStatus: 'too_large',
+        ingestError: `Repo has ${chunks.length} chunks which exceeds the ${MAX_CHUNKS} limit for AI chat.`
+      })
+      console.log(`Skipping embedding — too large: ${chunks.length} chunks`)
+      return
+    }
+
     const embeddedChunks = await embedChunks(chunks)
     console.log(`Embedded ${embeddedChunks.length} chunks`)
 
-    // delete old chunks before inserting new ones
     await Chunk.deleteMany({ digestId })
 
-    // batch insertMany to avoid MongoDB 16MB document limit
     const MONGO_BATCH = 100
     const docs = embeddedChunks.map((chunk) => ({
       digestId,

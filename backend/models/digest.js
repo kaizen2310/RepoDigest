@@ -32,7 +32,7 @@ const digestSchema = new mongoose.Schema(
     },
     ingestStatus: {
       type: String,
-      enum: ['pending', 'processing', 'ready', 'failed'],
+      enum: ['pending', 'processing', 'ready', 'failed', 'too_large'],
       default: 'pending'
     },
     ingestError: {

@@ -10,6 +10,10 @@ const DEFAULT_IGNORE = new Set([
   'node_modules', '.git', 'dist', 'build',
   '.next', '__pycache__', 'package-lock.json',
   'yarn.lock', 'pnpm-lock.yaml',
+
+  '__tests__', 'test', 'tests', 'spec',
+  '.github', 'coverage', 'docs',
+  'changelog.md', 'license', 'licence',
 ])
 
 let _octokit = null
