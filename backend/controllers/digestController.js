@@ -119,7 +119,12 @@ export async function generateRepoDigest(req, res) {
       // Chunks missing or ingest failed — re-trigger
       let ingestStatus = cached.ingestStatus
 
-      if (chunkCount === 0 || cached.ingestStatus === 'failed') {
+      if (
+        chunkCount === 0 &&
+        cached.ingestStatus !== 'too_large' &&
+        cached.ingestStatus !== 'processing' &&
+        cached.ingestStatus !== 'ready'
+      ) {
         ingestStatus = 'pending'
         await Digest.findByIdAndUpdate(cached._id, {
           ingestStatus,

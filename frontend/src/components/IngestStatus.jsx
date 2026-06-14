@@ -1,11 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock3,
-  Loader2,
-} from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock3, Loader2, Ban } from "lucide-react"
 
 const STATUS_META = {
   pending: {
@@ -29,6 +23,11 @@ const STATUS_META = {
     className: 'border-red-200 bg-red-50 text-red-700',
     icon: AlertCircle,
   },
+  too_large: {
+    label: 'Too large',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    icon: Ban,
+  },
 }
 
 export default function IngestStatus({ status = 'pending', error }) {
@@ -41,10 +40,8 @@ export default function IngestStatus({ status = 'pending', error }) {
         <Icon className={`mr-1 h-3.5 w-3.5 ${meta.spin ? 'animate-spin' : ''}`} />
         {meta.label}
       </Badge>
-      {error && (
-        <span className="text-xs text-red-600">
-          {error}
-        </span>
+      {error && status === 'failed' && (
+        <span className="text-xs text-destructive">{error}</span>
       )}
     </div>
   )

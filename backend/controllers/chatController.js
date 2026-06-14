@@ -30,7 +30,13 @@ export async function chat(req, res) {
         error: 'Ingest failed for this repo. Try regenerating the digest.'
       })
     }
-
+    
+    if (digest.ingestStatus === 'too_large') {
+      return res.status(400).json({
+        error: 'This repo is too large for AI chat. Download the digest instead.'
+      })
+    }
+    
     // check chunks exist
     const chunkCount = await Chunk.countDocuments({ digestId })
     if (chunkCount === 0) {

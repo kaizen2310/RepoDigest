@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { AlertCircle } from "lucide-react"
 
 import RepoInput from './components/RepoInput'
 import DigestOutput from './components/DigestOutput'
 import RepoSummary from './components/RepoSummary'
 import ChatPanel from './components/ChatPanel'
-import IngestStatus from './components/IngestStatus'
 
 import { fetchIngestStatus, fetchRepoTree, generateDigest } from './services/api'
-import { Button } from "@/components/ui/button"
 
-const STEPS = {
-  IDLE: 'idle',
-  DASHBOARD: 'dashboard'
-}
+const STEPS = { IDLE: 'idle', DASHBOARD: 'dashboard' }
+
+const EXAMPLE_REPOS = [
+  'https://github.com/expressjs/express',
+  'https://github.com/axios/axios',
+  'https://github.com/vitejs/vite',
+]
 
 export default function App() {
   const [step, setStep] = useState(STEPS.IDLE)
@@ -26,16 +30,14 @@ export default function App() {
 
   useEffect(() => {
     if (!digestId || !['pending', 'processing'].includes(ingestStatus)) return
-
     const timer = window.setInterval(async () => {
       try {
         const latest = await fetchIngestStatus(digestId)
         setDigestResult((current) => ({ ...current, ...latest }))
       } catch (err) {
-        setError(err.response?.data?.error || 'Failed to refresh status')
+        setError('Failed to refresh status')
       }
     }, 2500)
-
     return () => window.clearInterval(timer)
   }, [digestId, ingestStatus])
 
@@ -68,70 +70,81 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f6f7f8] text-foreground">
+    <div className="flex min-h-screen flex-col bg-muted/30 text-foreground">
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-4 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-black text-lg font-bold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-foreground text-base font-bold text-background">
               R
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight">RepoDigest</span>
-              <span className="text-xs text-muted-foreground">Generate LLM-ready repository digests</span>
+              <span className="text-base font-semibold tracking-tight leading-none">
+                RepoDigest
+              </span>
+              <span className="text-xs text-muted-foreground mt-0.5">
+                LLM-ready GitHub digests
+              </span>
             </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {step === STEPS.DASHBOARD && (
-              <Button variant="outline" onClick={reset}>New repo</Button>
-            )}
-          </div>
+          {step === STEPS.DASHBOARD && (
+            <Button variant="outline" size="sm" onClick={reset}>
+              New repo
+            </Button>
+          )}
         </div>
       </header>
 
       {/* ERROR */}
       {error && (
-        <div className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 sm:px-6">
-          {error}
+        <div className="px-4 pt-3 sm:px-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </div>
       )}
 
       {/* LANDING */}
       {step === STEPS.IDLE && (
         <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6 sm:py-24">
-          <div className="max-w-3xl">
-            <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl">
+          <div className="w-full max-w-2xl">
+            <h1 className="mb-3 text-4xl font-black tracking-tight sm:text-5xl">
               RepoDigest
             </h1>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-              Generate clean, structured LLM-ready digests from GitHub repositories.
+            <p className="mx-auto mb-8 max-w-xl text-base leading-7 text-muted-foreground">
+              Generate clean, structured LLM-ready digests from any GitHub repository.
             </p>
+
             <RepoInput onSubmit={handleUrlSubmit} loading={loading} />
-            {loading ? (
-              <p className="mt-6 text-sm text-muted-foreground">
-                Fetching repository — large repos may take 10–20 seconds...
-              </p>
-            ) : (
-              <div className="mt-8">
-                <p className="mb-3 text-xs text-muted-foreground">Try an example:</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {[
-                    'https://github.com/expressjs/express',
-                    'https://github.com/axios/axios',
-                    'https://github.com/vitejs/vite',
-                  ].map((repo) => (
-                    <button
-                      key={repo}
-                      onClick={() => handleUrlSubmit(repo)}
-                      className="rounded-md border bg-white px-3 py-1.5 text-xs font-mono text-muted-foreground transition-colors hover:border-zinc-400 hover:text-foreground"
-                    >
-                      {repo.replace('https://github.com/', '')}
-                    </button>
-                  ))}
+
+            <div className="mt-6 min-h-[60px]">
+              {loading ? (
+                <p className="text-sm text-muted-foreground">
+                  Fetching repository — large repos may take 10–20 seconds...
+                </p>
+              ) : (
+                <div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Try an example:
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {EXAMPLE_REPOS.map((repo) => (
+                      <Button
+                        key={repo}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUrlSubmit(repo)}
+                        className="font-mono text-xs"
+                      >
+                        {repo.replace('https://github.com/', '')}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </main>
       )}
@@ -139,15 +152,11 @@ export default function App() {
       {/* DASHBOARD */}
       {step === STEPS.DASHBOARD && treeData && digestResult && (
         <main className="flex flex-1 flex-col">
-
-          {/* Summary bar */}
           <RepoSummary treeData={treeData} digestResult={digestResult} />
+          <div className="grid flex-1 lg:grid-cols-2">
 
-          {/* Two column layout */}
-          <div className="grid flex-1 items-start lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
-
-            {/* Left: digest content has its own scroll area */}
-            <div className="border-r bg-white">
+            {/* Left — digest */}
+            <div className="border-r bg-background">
               <div className="p-4 sm:p-6">
                 <DigestOutput
                   result={digestResult}
@@ -157,33 +166,15 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right: ingest status + chat */}
-            <div className="flex flex-col gap-3 bg-muted/30 p-4 lg:sticky lg:top-[73px] lg:max-h-[calc(100vh-73px)]">
-
-              {/* Ingest status: fixed height, doesn't grow */}
-              <div className="shrink-0 rounded-md border bg-white p-4">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold">AI Chat Status</span>
-                  <IngestStatus
-                    status={ingestStatus}
-                    error={digestResult.ingestError}
-                  />
-                </div>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  Digest is available now. Repo chat unlocks after chunks and embeddings are ready.
-                </p>
-              </div>
-
-              {/* Chat: takes all remaining height */}
-              <div className="min-h-0">
-                <ChatPanel
-                  digestId={digestId}
-                  ingestStatus={ingestStatus}
-                  ingestError={digestResult?.ingestError}
-                />
-              </div>
-
+            {/* Right — chat only */}
+            <div className="flex flex-col bg-white p-4 lg:sticky lg:top-[57px] lg:max-h-[calc(100vh-57px)]">
+              <ChatPanel
+                digestId={digestId}
+                ingestStatus={ingestStatus}
+                ingestError={digestResult?.ingestError}
+              />
             </div>
+
           </div>
         </main>
       )}

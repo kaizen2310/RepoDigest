@@ -33,3 +33,22 @@ add timer for embedding to complete menter so user can know how much wait
 create sepearate file explaining nice important useful featuer or caution you have implemented to take care of user need need
 
 if someone has already index a file i should be used to again index
+
+
+check files included in digest generation and embedding generation and to igonre file like test while embedding
+
+M
+
+ost users first want:
+
+What is this project?
+
+Consider an AI-generated overview card:
+
+
+
+give user warning about incorrect answer that all answer are based of repo text/context
+
+
+
+when user paste link show user what stage is at like fecctching from github generating digest and all that so user knows something is happening 
