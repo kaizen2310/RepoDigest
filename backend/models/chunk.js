@@ -36,6 +36,10 @@ const chunkSchema = new mongoose.Schema(
     tokens: {
       type: Number
     },
+    chunkHash: {
+      type: String,
+      index: true
+    },
     embedding: {
       type: [Number],
       required: true,
@@ -46,6 +50,7 @@ const chunkSchema = new mongoose.Schema(
 
 chunkSchema.index({ digestId: 1 })
 chunkSchema.index({ owner: 1, repo: 1, ref: 1 })
+chunkSchema.index({ chunkHash: 1 })
 chunkSchema.index({ text: 'text' })
 
 export default mongoose.model('Chunk', chunkSchema)

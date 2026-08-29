@@ -1,17 +1,25 @@
-function estimateTokens(text) {
-  return Math.ceil(text.length / 4)
+import crypto from 'crypto'
+
+export function estimateTokens(text) {
+  return Math.ceil((text || '').length / 4)
 }
 
-const CHUNK_TOKENS = 500
-const OVERLAP_TOKENS = 100
-const MAX_CHUNK_CHARS = 8000
+export function calculateChunkHash(filePath, text) {
+  return crypto
+    .createHash('sha256')
+    .update(`${filePath}\n${text}`)
+    .digest('hex')
+}
+
+export const CHUNK_TOKENS = 850
+export const OVERLAP_TOKENS = 80
+export const MAX_CHUNK_CHARS = 8000
 
 export function chunkFiles(files) {
   const chunks = []
 
   for (const file of files) {
-    // skip files with no content
-    if (!file.content || file.content.trim() === '') continue
+    if (!file?.content || file.content.trim() === '') continue
 
     const lines = file.content.split('\n')
     let currentLines = []
@@ -23,14 +31,16 @@ export function chunkFiles(files) {
       const lineTokens = estimateTokens(line)
 
       if (currentTokens + lineTokens > CHUNK_TOKENS && currentLines.length > 0) {
-        const chunkText = `File: ${file.path}\n\n${currentLines.join('\n')}`
+        const rawChunk = `File: ${file.path}\n\n${currentLines.join('\n')}`
+        const safeText = rawChunk.slice(0, MAX_CHUNK_CHARS)
 
         chunks.push({
           filePath: file.path,
-          text: chunkText.slice(0, MAX_CHUNK_CHARS),  // ← use safeText
+          text: safeText,
           startLine,
           endLine: i - 1,
           tokens: currentTokens,
+          chunkHash: calculateChunkHash(file.path, safeText),
         })
 
         let overlapLines = []
@@ -53,13 +63,16 @@ export function chunkFiles(files) {
     }
 
     if (currentLines.length > 0) {
-      const chunkText = `File: ${file.path}\n\n${currentLines.join('\n')}`
+      const rawChunk = `File: ${file.path}\n\n${currentLines.join('\n')}`
+      const safeText = rawChunk.slice(0, MAX_CHUNK_CHARS)
+
       chunks.push({
         filePath: file.path,
-        text: chunkText.slice(0, MAX_CHUNK_CHARS),  // ← final chunk also safe
+        text: safeText,
         startLine,
         endLine: lines.length - 1,
         tokens: currentTokens,
+        chunkHash: calculateChunkHash(file.path, safeText),
       })
     }
   }

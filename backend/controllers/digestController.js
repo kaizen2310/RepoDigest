@@ -9,31 +9,80 @@ const MAX_CHUNKS = 500
 
 async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
   try {
+    const currentDigest = await Digest.findById(digestId)
+    if (!currentDigest) return
+
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'processing',
-      ingestError: null
+      ingestError: null,
     })
 
     const chunks = chunkFiles(rawFiles)
-    console.log(`Chunked into ${chunks.length} chunks`)
+    console.log(`[digestController] Chunked repository into ${chunks.length} chunks`)
 
     // check chunk limit before embedding
     if (chunks.length > MAX_CHUNKS) {
       await Digest.findByIdAndUpdate(digestId, {
         ingestStatus: 'too_large',
-        ingestError: `Repo has ${chunks.length} chunks which exceeds the ${MAX_CHUNKS} limit for AI chat.`
+        ingestError: `Repo has ${chunks.length} chunks which exceeds the ${MAX_CHUNKS} limit for AI chat.`,
       })
-      console.log(`Skipping embedding — too large: ${chunks.length} chunks`)
+      console.log(`[digestController] Skipping embedding — too large: ${chunks.length} chunks`)
       return
     }
 
-    const embeddedChunks = await embedChunks(chunks)
-    console.log(`Embedded ${embeddedChunks.length} chunks`)
+    if (chunks.length === 0) {
+      await Digest.findByIdAndUpdate(digestId, {
+        ingestStatus: 'ready',
+        ingestError: null,
+      })
+      return
+    }
 
+    // Step 1: Check if any chunk embeddings already exist in DB by chunkHash
+    const allHashes = chunks.map((c) => c.chunkHash).filter(Boolean)
+    const existingChunks = allHashes.length > 0
+      ? await Chunk.find({ chunkHash: { $in: allHashes } }).select('chunkHash embedding').lean()
+      : []
+
+    const embeddingCache = new Map()
+    for (const ec of existingChunks) {
+      if (ec.chunkHash && ec.embedding && !embeddingCache.has(ec.chunkHash)) {
+        embeddingCache.set(ec.chunkHash, ec.embedding)
+      }
+    }
+
+    const uncachedChunks = []
+    const readyChunks = []
+
+    for (const chunk of chunks) {
+      const cachedEmbedding = chunk.chunkHash ? embeddingCache.get(chunk.chunkHash) : null
+      if (cachedEmbedding) {
+        readyChunks.push({
+          ...chunk,
+          embedding: cachedEmbedding,
+        })
+      } else {
+        uncachedChunks.push(chunk)
+      }
+    }
+
+    console.log(
+      `[digestController] Embedding lookup: ${readyChunks.length} reused from cache, ${uncachedChunks.length} require Gemini API`
+    )
+
+    // Step 2: Embed uncached chunks in batches
+    let newlyEmbedded = []
+    if (uncachedChunks.length > 0) {
+      newlyEmbedded = await embedChunks(uncachedChunks)
+    }
+
+    const allEmbeddedChunks = [...readyChunks, ...newlyEmbedded]
+
+    // Step 3: Replace chunks for this digest
     await Chunk.deleteMany({ digestId })
 
     const MONGO_BATCH = 100
-    const docs = embeddedChunks.map((chunk) => ({
+    const docs = allEmbeddedChunks.map((chunk) => ({
       digestId,
       owner,
       repo,
@@ -43,37 +92,36 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
       startLine: chunk.startLine,
       endLine: chunk.endLine,
       tokens: chunk.tokens,
+      chunkHash: chunk.chunkHash,
       embedding: chunk.embedding,
     }))
 
     for (let i = 0; i < docs.length; i += MONGO_BATCH) {
       await Chunk.insertMany(docs.slice(i, i + MONGO_BATCH))
-      console.log(`Saved ${Math.min(i + MONGO_BATCH, docs.length)}/${docs.length} chunks to MongoDB`)
     }
+    console.log(`[digestController] Saved ${docs.length} chunks to MongoDB`)
 
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'ready',
-      ingestError: null
+      ingestError: null,
     })
-    console.log(`Ingest complete for ${owner}/${repo}`)
-
+    console.log(`[digestController] Ingest complete for ${owner}/${repo}`)
   } catch (err) {
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'failed',
-      ingestError: err.message
+      ingestError: err.message,
     })
-    console.error('Chunk and embed error:', err.message)
+    console.error('[digestController] Chunk and embed error:', err.message)
   }
 }
 
 export async function getDigestStatus(req, res) {
   try {
-    const doc = await Digest.findById(req.params.id)
-      .select('ingestStatus ingestError')
+    const doc = await Digest.findById(req.params.id).select('ingestStatus ingestError')
     if (!doc) return res.status(404).json({ error: 'Not found' })
     res.json({
       ingestStatus: doc.ingestStatus,
-      ingestError: doc.ingestError
+      ingestError: doc.ingestError,
     })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -108,27 +156,38 @@ export async function generateRepoDigest(req, res) {
 
     const ONE_HOUR_AGO = new Date(Date.now() - 60 * 60 * 1000)
     const cached = await Digest.findOne({
-      owner, repo, ref,
+      owner,
+      repo,
+      ref,
       createdAt: { $gte: ONE_HOUR_AGO },
     })
 
     if (cached) {
+      // If already processing or pending, return current status and do not spawn duplicate job
+      if (cached.ingestStatus === 'pending' || cached.ingestStatus === 'processing') {
+        return res.json({
+          id: cached._id,
+          digest: cached.digest,
+          tokenCount: cached.tokenCount,
+          fileCount: cached.fileCount,
+          ingestStatus: cached.ingestStatus,
+          fromCache: true,
+        })
+      }
+
       // Check if chunks exist for this digest
       const chunkCount = await Chunk.countDocuments({ digestId: cached._id })
-
-      // Chunks missing or ingest failed — re-trigger
       let ingestStatus = cached.ingestStatus
 
       if (
         chunkCount === 0 &&
         cached.ingestStatus !== 'too_large' &&
-        cached.ingestStatus !== 'processing' &&
         cached.ingestStatus !== 'ready'
       ) {
         ingestStatus = 'pending'
         await Digest.findByIdAndUpdate(cached._id, {
           ingestStatus,
-          ingestError: null
+          ingestError: null,
         })
 
         const { rawFiles } = await generateDigest(owner, repo, files, ref)
@@ -146,14 +205,23 @@ export async function generateRepoDigest(req, res) {
     }
 
     const { digest, tokenCount, fileCount, skipped, rawFiles } = await generateDigest(
-      owner, repo, files, ref
+      owner,
+      repo,
+      files,
+      ref
     )
 
     const meta = await fetchRepoMeta(owner, repo)
 
     const saved = await Digest.create({
-      owner, repo, ref, digest, tokenCount, fileCount, meta,
-      ingestStatus: 'pending'
+      owner,
+      repo,
+      ref,
+      digest,
+      tokenCount,
+      fileCount,
+      meta,
+      ingestStatus: 'pending',
     })
 
     chunkAndEmbed(saved._id, rawFiles, owner, repo, ref)
