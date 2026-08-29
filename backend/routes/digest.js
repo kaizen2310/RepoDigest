@@ -3,14 +3,15 @@ import {
   generateRepoDigest,
   getRepoTree,
   getDigestById,
-  getDigestStatus   // ← add this
+  getDigestStatus,
 } from '../controllers/digestController.js'
+import { digestRateLimiter } from '../middleware/rateLimiter.js'
 
 const router = Router()
 
-router.post('/tree', getRepoTree)
-router.post('/generate', generateRepoDigest)
-router.get('/:id/status', getDigestStatus)   // ← add BEFORE /:id
+router.post('/tree', digestRateLimiter, getRepoTree)
+router.post('/generate', digestRateLimiter, generateRepoDigest)
+router.get('/:id/status', getDigestStatus)
 router.get('/:id', getDigestById)
 
 export default router

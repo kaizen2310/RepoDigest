@@ -1,4 +1,4 @@
-import { parseGithubUrl, fetchRepoTree, fetchRepoMeta } from '../services/githubService.js'
+import { parseGithubUrl, fetchRepoTree, fetchRepoMeta, fetchLatestCommitSha } from '../services/githubService.js'
 import { generateDigest } from '../services/digestService.js'
 import { chunkFiles } from '../services/chunkService.js'
 import { embedChunks } from '../services/embedService.js'
@@ -136,12 +136,12 @@ export async function getRepoTree(req, res) {
     }
     const { owner, repo, branch } = parseGithubUrl(url)
 
-    const [{ files, ref }, meta] = await Promise.all([
+    const [{ files, ref, commitSha }, meta] = await Promise.all([
       fetchRepoTree(owner, repo, branch),
       fetchRepoMeta(owner, repo),
     ])
 
-    res.json({ owner, repo, ref, files, meta })
+    res.json({ owner, repo, ref, commitSha, files, meta })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -149,20 +149,41 @@ export async function getRepoTree(req, res) {
 
 export async function generateRepoDigest(req, res) {
   try {
-    const { owner, repo, ref, files } = req.body
+    let { owner, repo, ref, files, commitSha } = req.body
     if (!owner || !repo || !ref || !files?.length) {
       return res.status(400).json({ error: 'owner, repo, ref and files are required' })
     }
 
-    const ONE_HOUR_AGO = new Date(Date.now() - 60 * 60 * 1000)
-    const cached = await Digest.findOne({
-      owner,
-      repo,
-      ref,
-      createdAt: { $gte: ONE_HOUR_AGO },
-    })
+    // Resolve latest commit SHA if not supplied
+    if (!commitSha) {
+      commitSha = await fetchLatestCommitSha(owner, repo, ref)
+    }
+
+    // Lookup cache by commitSha (permanent exact cache)
+    let cached = null
+    if (commitSha) {
+      cached = await Digest.findOne({
+        owner,
+        repo,
+        ref,
+        commitSha,
+      })
+    }
+
+    // Fallback: 1-hour cache if commit SHA was unavailable
+    if (!cached && !commitSha) {
+      const ONE_HOUR_AGO = new Date(Date.now() - 60 * 60 * 1000)
+      cached = await Digest.findOne({
+        owner,
+        repo,
+        ref,
+        createdAt: { $gte: ONE_HOUR_AGO },
+      })
+    }
 
     if (cached) {
+      console.log(`[digestController] Cache HIT for ${owner}/${repo}@${ref} (SHA: ${commitSha || 'none'})`)
+
       // If already processing or pending, return current status and do not spawn duplicate job
       if (cached.ingestStatus === 'pending' || cached.ingestStatus === 'processing') {
         return res.json({
@@ -170,6 +191,7 @@ export async function generateRepoDigest(req, res) {
           digest: cached.digest,
           tokenCount: cached.tokenCount,
           fileCount: cached.fileCount,
+          commitSha: cached.commitSha,
           ingestStatus: cached.ingestStatus,
           fromCache: true,
         })
@@ -199,10 +221,13 @@ export async function generateRepoDigest(req, res) {
         digest: cached.digest,
         tokenCount: cached.tokenCount,
         fileCount: cached.fileCount,
+        commitSha: cached.commitSha,
         ingestStatus,
         fromCache: true,
       })
     }
+
+    console.log(`[digestController] Cache MISS for ${owner}/${repo}@${ref}. Generating digest...`)
 
     const { digest, tokenCount, fileCount, skipped, rawFiles } = await generateDigest(
       owner,
@@ -217,6 +242,7 @@ export async function generateRepoDigest(req, res) {
       owner,
       repo,
       ref,
+      commitSha,
       digest,
       tokenCount,
       fileCount,
@@ -231,6 +257,7 @@ export async function generateRepoDigest(req, res) {
       digest,
       tokenCount,
       fileCount,
+      commitSha,
       skipped,
       ingestStatus: 'pending',
       fromCache: false,

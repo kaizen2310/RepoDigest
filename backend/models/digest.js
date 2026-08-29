@@ -47,6 +47,7 @@ const digestSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-digestSchema.index({ owner: 1, repo: 1, ref: 1 })//caching
+digestSchema.index({ owner: 1, repo: 1, ref: 1 })
+digestSchema.index({ owner: 1, repo: 1, ref: 1, commitSha: 1 })
 
 export default mongoose.model('Digest', digestSchema)

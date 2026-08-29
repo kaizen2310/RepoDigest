@@ -52,6 +52,7 @@ export default function App() {
         repo: tree.repo,
         ref: tree.ref,
         files: tree.files,
+        commitSha: tree.commitSha,
       })
       setDigestResult({ ...result, id: result.id || result._id })
       setStep(STEPS.DASHBOARD)
