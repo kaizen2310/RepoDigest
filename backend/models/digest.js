@@ -38,6 +38,10 @@ const digestSchema = new mongoose.Schema(
     ingestError: {
       type: String,
       default: null
+    },
+    commitSha : {
+      type : String,
+      default :null
     }
   },
   { timestamps: true }

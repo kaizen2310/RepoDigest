@@ -40,6 +40,15 @@ export function parseGithubUrl(url) {
   }
 }
 
+export async function fetchLatestCommitSha(owner, repo, ref) {
+  const { data } = await getOctokit().repos.getCommit({
+    owner,
+    repo,
+    ref,
+  })
+  return data.sha
+}
+
 export async function fetchRepoMeta(owner, repo) {
   const { data } = await getOctokit().repos.get({ owner, repo })
   return {
