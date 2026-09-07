@@ -20,7 +20,7 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
     const chunks = chunkFiles(rawFiles)
     console.log(`[digestController] Chunked repository into ${chunks.length} chunks`)
 
-    // check chunk limit before embedding
+    // Check chunk limit before embedding
     if (chunks.length > MAX_CHUNKS) {
       await Digest.findByIdAndUpdate(digestId, {
         ingestStatus: 'too_large',
@@ -70,36 +70,49 @@ async function chunkAndEmbed(digestId, rawFiles, owner, repo, ref) {
       `[digestController] Embedding lookup: ${readyChunks.length} reused from cache, ${uncachedChunks.length} require Gemini API`
     )
 
-    // Step 2: Embed uncached chunks in batches
-    let newlyEmbedded = []
-    if (uncachedChunks.length > 0) {
-      newlyEmbedded = await embedChunks(uncachedChunks)
-    }
-
-    const allEmbeddedChunks = [...readyChunks, ...newlyEmbedded]
-
-    // Step 3: Replace chunks for this digest
+    // Clear previous chunks for this digest to prevent duplicates
     await Chunk.deleteMany({ digestId })
 
-    const MONGO_BATCH = 100
-    const docs = allEmbeddedChunks.map((chunk) => ({
-      digestId,
-      owner,
-      repo,
-      ref,
-      filePath: chunk.filePath,
-      text: chunk.text,
-      startLine: chunk.startLine,
-      endLine: chunk.endLine,
-      tokens: chunk.tokens,
-      chunkHash: chunk.chunkHash,
-      embedding: chunk.embedding,
-    }))
-
-    for (let i = 0; i < docs.length; i += MONGO_BATCH) {
-      await Chunk.insertMany(docs.slice(i, i + MONGO_BATCH))
+    // Save ready (cached) chunks immediately
+    if (readyChunks.length > 0) {
+      const readyDocs = readyChunks.map((chunk) => ({
+        digestId,
+        owner,
+        repo,
+        ref,
+        filePath: chunk.filePath,
+        text: chunk.text,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine,
+        tokens: chunk.tokens,
+        chunkHash: chunk.chunkHash,
+        embedding: chunk.embedding,
+      }))
+      await Chunk.insertMany(readyDocs)
+      console.log(`[digestController] Pre-saved ${readyDocs.length} cached chunks to MongoDB`)
     }
-    console.log(`[digestController] Saved ${docs.length} chunks to MongoDB`)
+
+    // Step 2: Embed uncached chunks progressively in batches
+    if (uncachedChunks.length > 0) {
+      await embedChunks(uncachedChunks, async (batchResult) => {
+        // Save each batch to MongoDB immediately as it completes
+        const batchDocs = batchResult.map((chunk) => ({
+          digestId,
+          owner,
+          repo,
+          ref,
+          filePath: chunk.filePath,
+          text: chunk.text,
+          startLine: chunk.startLine,
+          endLine: chunk.endLine,
+          tokens: chunk.tokens,
+          chunkHash: chunk.chunkHash,
+          embedding: chunk.embedding,
+        }))
+        await Chunk.insertMany(batchDocs)
+        console.log(`[digestController] Progressively saved ${batchDocs.length} chunks to MongoDB`)
+      })
+    }
 
     await Digest.findByIdAndUpdate(digestId, {
       ingestStatus: 'ready',

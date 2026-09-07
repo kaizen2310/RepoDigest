@@ -6,6 +6,7 @@ import mongoose from 'mongoose'
 import cors from 'cors'
 import digestRoutes from './routes/digest.js'
 import chatRoutes from './routes/chat.js'
+import { ensureVectorIndex } from './services/vectorIndexService.js'
 
 console.log('Token loaded:', !!process.env.GITHUB_TOKEN)
 
@@ -43,8 +44,9 @@ app.get('/api/health', (req, res) => {
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('mongoDB connected')
+    await ensureVectorIndex()
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`)
     })

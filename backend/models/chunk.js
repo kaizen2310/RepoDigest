@@ -38,7 +38,6 @@ const chunkSchema = new mongoose.Schema(
     },
     chunkHash: {
       type: String,
-      index: true
     },
     embedding: {
       type: [Number],
