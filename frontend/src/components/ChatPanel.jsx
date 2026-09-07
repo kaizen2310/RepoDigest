@@ -16,6 +16,7 @@ import {
   Loader2,
   Copy,
   Check,
+  Sparkles,
 } from "lucide-react"
 
 import { streamChatResponse } from '../services/api'
@@ -201,6 +202,12 @@ function FailedState() {
   )
 }
 
+const SUGGESTED_QUESTIONS = [
+  'What is this repository about and what are its key features?',
+  'What is the project structure and main entry point?',
+  'What are the core dependencies and runtime requirements?',
+]
+
 export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState([])
@@ -215,10 +222,9 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
 
   const chatReady = ingestStatus === 'ready'
 
-  async function submitQuestion(e) {
-    e.preventDefault()
-    const trimmed = question.trim()
-    if (!trimmed || loading || !chatReady) return
+  async function askQuestion(customQuestion) {
+    const targetQuestion = (typeof customQuestion === 'string' ? customQuestion : question).trim()
+    if (!targetQuestion || loading || !chatReady) return
 
     setError('')
     setQuestion('')
@@ -227,14 +233,14 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
     const assistantId = crypto.randomUUID()
     setMessages((current) => [
       ...current,
-      { id: crypto.randomUUID(), role: 'user', text: trimmed },
+      { id: crypto.randomUUID(), role: 'user', text: targetQuestion },
       { id: assistantId, role: 'assistant', text: '' },
     ])
 
     try {
       await streamChatResponse({
         digestId,
-        question: trimmed,
+        question: targetQuestion,
         onText: (text) => {
           setMessages((current) =>
             current.map((message) =>
@@ -259,6 +265,11 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
     }
   }
 
+  function submitQuestion(e) {
+    e.preventDefault()
+    askQuestion()
+  }
+
   function renderBody() {
     if (ingestStatus === 'too_large') return <TooLargeState ingestError={ingestError} />
     if (ingestStatus === 'processing') return <ProcessingState />
@@ -270,11 +281,31 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
         <div className="h-[calc(100vh-420px)] overflow-auto rounded-md border bg-zinc-50 p-3 space-y-3">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center p-4">
-              <Bot className="h-8 w-8 text-muted-foreground/50 mb-2" />
-              <p className="text-sm font-medium text-foreground">Ask anything about this codebase</p>
-              <p className="text-xs text-muted-foreground max-w-[260px] mt-1">
-                Answers are generated using semantic code retrieval via MongoDB Atlas Vector Search & Gemini.
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200/60 text-zinc-700 mb-2">
+                <Bot className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">Ask anything about this codebase</p>
+              <p className="text-xs text-muted-foreground max-w-[280px] mt-1 mb-4">
+                Answers are grounded using MongoDB Atlas Vector Search & Google Gemini.
               </p>
+
+              <div className="w-full max-w-[340px] space-y-1.5 text-left">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                  Quick Repo Insights
+                </p>
+                {SUGGESTED_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    disabled={loading || !chatReady}
+                    onClick={() => askQuestion(q)}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-800 shadow-2xs hover:bg-zinc-100 hover:border-zinc-300 transition-all flex items-center justify-between group text-left cursor-pointer"
+                  >
+                    <span>{q}</span>
+                    <Sparkles className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 ml-2" />
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((message) => (
@@ -295,7 +326,22 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
           </Alert>
         )}
 
-        <form onSubmit={submitQuestion} className="mt-3 space-y-2">
+        {messages.length > 0 && chatReady && !loading && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {SUGGESTED_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => askQuestion(q)}
+                className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-200 transition-colors cursor-pointer"
+              >
+                {q.length > 34 ? q.slice(0, 32) + '...' : q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={submitQuestion} className="mt-2 space-y-2">
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}

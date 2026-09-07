@@ -1,13 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { GitFork, Files, FileCode2, BookCheck, Star } from "lucide-react"
+import { GitFork, Files, FileCode2, BookCheck, Star, GitCommit } from "lucide-react"
 
 const TOKEN_LIMIT = 300000
 
 export default function RepoSummary({ treeData, digestResult }) {
   const { owner, repo, ref, files, meta } = treeData
   const { tokenCount, fileCount } = digestResult
+  const commitSha = digestResult?.commitSha || treeData?.commitSha
 
   const overLimit = tokenCount > TOKEN_LIMIT
   const pct = Math.min(100, Math.round((tokenCount / TOKEN_LIMIT) * 100))
@@ -34,6 +35,28 @@ export default function RepoSummary({ treeData, digestResult }) {
             <Badge variant="secondary">
               <GitFork className="mr-1 h-3 w-3" />{ref}
             </Badge>
+            {commitSha && (
+              <a
+                href={`https://github.com/${owner}/${repo}/commit/${commitSha}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`View commit ${commitSha} on GitHub`}
+                className="inline-flex items-center"
+              >
+                <Badge
+                  variant="outline"
+                  className="font-mono text-xs gap-1 hover:bg-muted transition-colors cursor-pointer border-zinc-300"
+                >
+                  <GitCommit className="h-3 w-3 text-muted-foreground" />
+                  <span>{commitSha.slice(0, 7)}</span>
+                  {digestResult?.fromCache && (
+                    <span className="rounded bg-emerald-100 px-1 py-0.2 text-[10px] font-sans font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 ml-1">
+                      cached
+                    </span>
+                  )}
+                </Badge>
+              </a>
+            )}
             <Badge variant="outline">
               <Files className="mr-1 h-3 w-3" />{files.length} files
             </Badge>
