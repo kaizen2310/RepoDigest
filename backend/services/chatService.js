@@ -66,13 +66,36 @@ QUESTION:
 ${question}`
 }
 
-export async function ragQuery(question, owner, repo, ref, digestId, onChunk) {
+export async function ragQuery(question, owner, repo, ref, digestId, onChunk, onSources) {
   const embedding = await embedQuestion(question)
   const results = await vectorSearch(embedding, owner, repo, ref, digestId, 8)
 
   if (results.length === 0) {
     onChunk("I couldn't find relevant code for that question. The repo may still be processing — try again in a moment.")
     return
+  }
+
+  // Extract top unique source files with GitHub URLs
+  if (typeof onSources === 'function') {
+    const sources = []
+    const seen = new Set()
+    for (const r of results) {
+      const key = `${r.filePath}:${r.startLine || 0}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        const start = r.startLine != null ? r.startLine + 1 : null
+        const end = r.endLine != null ? r.endLine + 1 : null
+        const lineHash = start != null ? `#L${start}${end && end !== start ? `-L${end}` : ''}` : ''
+        sources.push({
+          filePath: r.filePath,
+          startLine: start,
+          endLine: end,
+          url: `https://github.com/${owner}/${repo}/blob/${ref}/${r.filePath}${lineHash}`,
+        })
+      }
+      if (sources.length >= 3) break
+    }
+    onSources(sources)
   }
 
   const prompt = buildPrompt(question, results)

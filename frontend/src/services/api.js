@@ -21,7 +21,7 @@ export async function fetchDigestById(id) {
   return data
 }
 
-export async function streamChatResponse({ digestId, question, onText }) {
+export async function streamChatResponse({ digestId, question, onText, onSources }) {
   const response = await fetch(`${API_BASE_URL}/chat/${digestId}`, {
     method: 'POST',
     headers: {
@@ -64,11 +64,17 @@ export async function streamChatResponse({ digestId, question, onText }) {
       if (payload.error) {
         throw new Error(payload.error)
       }
-      if (payload.done) {
-        return
+      if (payload.sources && onSources) {
+        onSources(payload.sources)
       }
       if (payload.text) {
         onText(payload.text)
+      }
+      if (payload.done) {
+        if (payload.sources && onSources) {
+          onSources(payload.sources)
+        }
+        return
       }
     }
   }

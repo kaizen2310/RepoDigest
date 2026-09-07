@@ -17,6 +17,8 @@ import {
   Copy,
   Check,
   Sparkles,
+  FileCode2,
+  ExternalLink,
 } from "lucide-react"
 
 import { streamChatResponse } from '../services/api'
@@ -107,7 +109,7 @@ function FormattedContent({ text }) {
   )
 }
 
-function MessageBubble({ role, text }) {
+function MessageBubble({ role, text, sources }) {
   const isUser = role === 'user'
 
   return (
@@ -127,7 +129,37 @@ function MessageBubble({ role, text }) {
         {isUser ? (
           <p className="whitespace-pre-wrap break-words">{text}</p>
         ) : (
-          <FormattedContent text={text} />
+          <>
+            <FormattedContent text={text} />
+            {sources?.length > 0 && (
+              <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  <FileCode2 className="h-3 w-3" />
+                  <span>Sources cited</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {sources.map((src, idx) => (
+                    <a
+                      key={idx}
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`View ${src.filePath} on GitHub`}
+                      className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 px-2 py-0.5 text-xs font-mono text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:border-zinc-300 transition-colors"
+                    >
+                      <span className="truncate max-w-[160px] sm:max-w-[220px]">{src.filePath}</span>
+                      {src.startLine != null && (
+                        <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
+                          (lines {src.startLine}{src.endLine && src.endLine !== src.startLine ? `–${src.endLine}` : ''})
+                        </span>
+                      )}
+                      <ExternalLink className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -234,7 +266,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
     setMessages((current) => [
       ...current,
       { id: crypto.randomUUID(), role: 'user', text: targetQuestion },
-      { id: assistantId, role: 'assistant', text: '' },
+      { id: assistantId, role: 'assistant', text: '', sources: [] },
     ])
 
     try {
@@ -246,6 +278,15 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
             current.map((message) =>
               message.id === assistantId
                 ? { ...message, text: message.text + text }
+                : message
+            )
+          )
+        },
+        onSources: (sources) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId
+                ? { ...message, sources }
                 : message
             )
           )
@@ -313,6 +354,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
                 key={message.id}
                 role={message.role}
                 text={message.text || (loading ? 'Thinking...' : '')}
+                sources={message.sources}
               />
             ))
           )}

@@ -51,20 +51,25 @@ export async function chat(req, res) {
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
 
-    // stream answer chunk by chunk
+    // stream answer chunk by chunk and send sources
+    let retrievedSources = []
     await ragQuery(
       question,
       digest.owner,
       digest.repo,
       digest.ref,
-      digest._id,   // ← add
+      digest._id,
       (text) => {
         res.write(`data: ${JSON.stringify({ text })}\n\n`)
+      },
+      (sources) => {
+        retrievedSources = sources
+        res.write(`data: ${JSON.stringify({ sources })}\n\n`)
       }
     )
 
     // signal stream is done
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+    res.write(`data: ${JSON.stringify({ done: true, sources: retrievedSources })}\n\n`)
     res.end()
 
   } catch (err) {
