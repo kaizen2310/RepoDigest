@@ -22,90 +22,29 @@ async function vectorSearch(embedding, owner, repo, ref, digestId, limit = 8) {
     ? { digestId: new mongoose.Types.ObjectId(digestId.toString()) }
     : { owner, repo, ref }
 
-  try {
-    const results = await Chunk.aggregate([
-      {
-        $vectorSearch: {
-          index: 'vector_index',
-          path: 'embedding',
-          queryVector: embedding,
-          numCandidates: 100,
-          limit,
-          filter: filterClause,
-        },
+  const results = await Chunk.aggregate([
+    {
+      $vectorSearch: {
+        index: 'vector_index',
+        path: 'embedding',
+        queryVector: embedding,
+        numCandidates: 100,
+        limit,
+        filter: filterClause,
       },
-      {
-        $project: {
-          _id: 1,
-          digestId: 1,
-          text: 1,
-          filePath: 1,
-          startLine: 1,
-          endLine: 1,
-          score: { $meta: 'vectorSearchScore' },
-        },
+    },
+    {
+      $project: {
+        _id: 1,
+        text: 1,
+        filePath: 1,
+        startLine: 1,
+        endLine: 1,
+        score: { $meta: 'vectorSearchScore' },
       },
-    ])
-    return results
-  } catch (err) {
-    console.warn('[chatService] vectorSearch error:', err.message)
-    return []
-  }
-}
-
-async function retrieveChunks(question, embedding, owner, repo, ref, digestId, limit = 8) {
-  const digestObjectId = digestId ? new mongoose.Types.ObjectId(digestId.toString()) : null
-
-  // 1. Direct file mention check (lexical retrieval for specific file queries)
-  const fileTokens = question.match(/[\w.-]+\.[a-zA-Z0-9]+/g) || []
-  let directFileChunks = []
-  if (fileTokens.length > 0 && digestObjectId) {
-    try {
-      const cleanToken = fileTokens[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      directFileChunks = await Chunk.find({
-        digestId: digestObjectId,
-        filePath: { $regex: cleanToken, $options: 'i' },
-      })
-        .limit(4)
-        .select('_id digestId text filePath startLine endLine')
-        .lean()
-    } catch (err) {
-      console.warn('[chatService] Direct file lookup warning:', err.message)
-    }
-  }
-
-  // 2. Vector search (semantic retrieval)
-  const vectorChunks = await vectorSearch(embedding, owner, repo, ref, digestId, limit)
-
-  // 3. Merge and deduplicate
-  const chunkMap = new Map()
-  for (const c of directFileChunks) {
-    chunkMap.set(c._id.toString(), c)
-  }
-  for (const c of vectorChunks) {
-    if (!chunkMap.has(c._id.toString())) {
-      chunkMap.set(c._id.toString(), c)
-    }
-  }
-
-  let merged = Array.from(chunkMap.values()).slice(0, limit)
-
-  // 4. Fallback: text search if nothing was retrieved
-  if (merged.length === 0 && digestObjectId) {
-    try {
-      merged = await Chunk.find({
-        digestId: digestObjectId,
-        $text: { $search: question },
-      })
-        .limit(limit)
-        .select('_id digestId text filePath startLine endLine')
-        .lean()
-    } catch (textErr) {
-      // ignore text search fallback errors
-    }
-  }
-
-  return merged
+    },
+  ])
+  return results
 }
 
 function buildPrompt(question, chunks) {
@@ -129,7 +68,7 @@ ${question}`
 
 export async function ragQuery(question, owner, repo, ref, digestId, onChunk) {
   const embedding = await embedQuestion(question)
-  const results = await retrieveChunks(question, embedding, owner, repo, ref, digestId, 8)
+  const results = await vectorSearch(embedding, owner, repo, ref, digestId, 8)
 
   if (results.length === 0) {
     onChunk("I couldn't find relevant code for that question. The repo may still be processing — try again in a moment.")
