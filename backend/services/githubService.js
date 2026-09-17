@@ -18,17 +18,31 @@ const DEFAULT_IGNORE = new Set([
 ])
 
 let _octokit = null
+let _tokenFailed = false
 
 function getOctokit() {
-  if (!_octokit) {
-    if (!process.env.GITHUB_TOKEN) {
-      console.warn('[githubService] GITHUB_TOKEN is not set in environment variables. Falling back to unauthenticated client with lower rate limits.')
+  if (!_octokit || _tokenFailed) {
+    if (!process.env.GITHUB_TOKEN || _tokenFailed) {
       _octokit = new Octokit()
     } else {
-      _octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
+      _octokit = new Octokit({ auth: process.env.GITHUB_TOKEN.trim() })
     }
   }
   return _octokit
+}
+
+async function withOctokit(apiCall) {
+  try {
+    return await apiCall(getOctokit())
+  } catch (err) {
+    if (err.status === 401 && process.env.GITHUB_TOKEN && !_tokenFailed) {
+      console.warn('[githubService] GITHUB_TOKEN rejected (401 Bad credentials). Falling back to unauthenticated public requests.')
+      _tokenFailed = true
+      _octokit = new Octokit()
+      return await apiCall(_octokit)
+    }
+    throw err
+  }
 }
 
 /**
@@ -114,11 +128,13 @@ export function parseGithubUrl(rawInput) {
 
 export async function fetchLatestCommitSha(owner, repo, ref) {
   try {
-    const { data } = await getOctokit().repos.getCommit({
-      owner,
-      repo,
-      ref,
-    })
+    const { data } = await withOctokit((octo) =>
+      octo.repos.getCommit({
+        owner,
+        repo,
+        ref,
+      })
+    )
     return data.sha
   } catch (err) {
     console.warn(`[githubService] Could not fetch commit SHA for ${owner}/${repo}@${ref}: ${err.message}`)
@@ -127,7 +143,7 @@ export async function fetchLatestCommitSha(owner, repo, ref) {
 }
 
 export async function fetchRepoMeta(owner, repo) {
-  const { data } = await getOctokit().repos.get({ owner, repo })
+  const { data } = await withOctokit((octo) => octo.repos.get({ owner, repo }))
   return {
     description: data.description,
     stars: data.stargazers_count,
@@ -140,18 +156,20 @@ export async function fetchRepoMeta(owner, repo) {
 export async function fetchRepoTree(owner, repo, branch) {
   let ref = branch
   if (!ref) {
-    const { data } = await getOctokit().repos.get({ owner, repo })
+    const { data } = await withOctokit((octo) => octo.repos.get({ owner, repo }))
     ref = data.default_branch
   }
 
   // Fetch tree and commit SHA concurrently
   const [treeResponse, commitSha] = await Promise.all([
-    getOctokit().git.getTree({
-      owner,
-      repo,
-      tree_sha: ref,
-      recursive: '1',
-    }),
+    withOctokit((octo) =>
+      octo.git.getTree({
+        owner,
+        repo,
+        tree_sha: ref,
+        recursive: '1',
+      })
+    ),
     fetchLatestCommitSha(owner, repo, ref),
   ])
 
@@ -178,7 +196,7 @@ export async function fetchRepoTree(owner, repo, branch) {
 
 export async function fetchFileContent(owner, repo, path, ref) {
   try {
-    const { data } = await getOctokit().repos.getContent({ owner, repo, path, ref })
+    const { data } = await withOctokit((octo) => octo.repos.getContent({ owner, repo, path, ref }))
     if (data.encoding === 'base64') {
       return Buffer.from(data.content, 'base64').toString('utf-8')
     }

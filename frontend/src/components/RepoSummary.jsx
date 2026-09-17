@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { GitFork, Files, FileCode2, BookCheck, Star, GitCommit } from "lucide-react"
+import { GitFork, Files, FileCode2, BookCheck, Star, GitCommit, ExternalLink } from "lucide-react"
 
 const TOKEN_LIMIT = 300000
 
@@ -20,10 +20,19 @@ export default function RepoSummary({ treeData, digestResult }) {
         {/* Left */}
         <div className="min-w-0 flex flex-col gap-2">
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight leading-snug">
-              {owner}
-              <span className="text-muted-foreground">/{repo}</span>
-            </span>
+            <a
+              href={`https://github.com/${owner}/${repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Open ${owner}/${repo} on GitHub`}
+              className="group inline-flex items-center gap-1.5 text-lg font-bold tracking-tight leading-snug hover:text-primary transition-colors cursor-pointer w-fit"
+            >
+              <span>
+                {owner}
+                <span className="text-muted-foreground">/{repo}</span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </a>
             {meta.description && (
               <span className="max-w-[600px] text-xs leading-5 text-muted-foreground">
                 {meta.description}
@@ -77,20 +86,17 @@ export default function RepoSummary({ treeData, digestResult }) {
         </div>
 
         {/* Right — token usage */}
-        <div className="flex shrink-0 flex-col gap-1.5 rounded-md border bg-muted/30 px-4 py-2.5 min-w-[200px]">
+        <div className="flex shrink-0 flex-col gap-1.5 rounded-md border bg-muted/30 px-4 py-2.5 min-w-[190px]">
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">Token usage</span>
-            <span className={`text-xs font-semibold ${overLimit ? 'text-destructive' : ''}`}>
-              {pct}% of 300k
+            <span className={`text-xs font-semibold ${overLimit ? 'text-destructive' : 'text-foreground'}`}>
+              {tokenCount.toLocaleString()} tokens
             </span>
           </div>
           <Progress
             value={pct}
             className={`h-1.5 ${overLimit ? '[&>div]:bg-destructive' : pct > 80 ? '[&>div]:bg-yellow-500' : ''}`}
           />
-          <span className={`text-xs font-medium ${overLimit ? 'text-destructive' : 'text-foreground'}`}>
-            {tokenCount.toLocaleString()} tokens
-          </span>
         </div>
 
       </CardContent>
