@@ -21,6 +21,8 @@ import {
   ExternalLink,
 } from "lucide-react"
 
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { streamChatResponse } from '../services/api'
 
 function CodeBlock({ language, code }) {
@@ -39,7 +41,7 @@ function CodeBlock({ language, code }) {
         <button
           type="button"
           onClick={copyCode}
-          className="flex items-center gap-1 hover:text-zinc-200 transition-colors"
+          className="flex items-center gap-1 hover:text-zinc-200 transition-colors cursor-pointer"
         >
           {copied ? (
             <>
@@ -64,47 +66,80 @@ function CodeBlock({ language, code }) {
 function FormattedContent({ text }) {
   if (!text) return null
 
-  // Split by code blocks (```lang ... ```)
-  const parts = text.split(/(```[\s\S]*?```)/g)
-
   return (
-    <div className="space-y-2 text-sm leading-6 break-words">
-      {parts.map((part, index) => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const firstLineEnd = part.indexOf('\n')
-          const language = part.slice(3, firstLineEnd !== -1 ? firstLineEnd : 3).trim()
-          const code = firstLineEnd !== -1 ? part.slice(firstLineEnd + 1, -3) : part.slice(3, -3)
-          return <CodeBlock key={index} language={language} code={code} />
-        }
-
-        // Handle paragraphs and inline code inside regular text
-        const paragraphs = part.split('\n\n').filter(Boolean)
-        return (
-          <div key={index} className="space-y-1.5">
-            {paragraphs.map((p, pIdx) => {
-              // Parse inline code `code`
-              const inlineParts = p.split(/(`[^`]+`)/g)
-              return (
-                <p key={pIdx}>
-                  {inlineParts.map((sub, sIdx) => {
-                    if (sub.startsWith('`') && sub.endsWith('`') && sub.length > 2) {
-                      return (
-                        <code
-                          key={sIdx}
-                          className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground font-semibold"
-                        >
-                          {sub.slice(1, -1)}
-                        </code>
-                      )
-                    }
-                    return sub
-                  })}
-                </p>
-              )
-            })}
-          </div>
-        )
-      })}
+    <div className="text-sm leading-6 break-words text-zinc-900 dark:text-zinc-100">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          pre({ children }) {
+            return <>{children}</>
+          },
+          code({ className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '')
+            const codeString = String(children).replace(/\n$/, '')
+            const isMultiLine = codeString.includes('\n')
+            if (match || isMultiLine) {
+              return <CodeBlock language={match ? match[1] : ''} code={codeString} />
+            }
+            return (
+              <code
+                className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100"
+                {...props}
+              >
+                {children}
+              </code>
+            )
+          },
+          p({ children }) {
+            return <p className="mb-2 last:mb-0 leading-6">{children}</p>
+          },
+          ul({ children }) {
+            return <ul className="list-disc list-outside ml-4 mb-2 space-y-1">{children}</ul>
+          },
+          ol({ children }) {
+            return <ol className="list-decimal list-outside ml-4 mb-2 space-y-1">{children}</ol>
+          },
+          li({ children }) {
+            return <li className="leading-6">{children}</li>
+          },
+          h1({ children }) {
+            return <h1 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h1>
+          },
+          h2({ children }) {
+            return <h2 className="text-sm font-bold mb-1.5 mt-2.5 first:mt-0">{children}</h2>
+          },
+          h3({ children }) {
+            return <h3 className="text-sm font-semibold mb-1 mt-2 first:mt-0">{children}</h3>
+          },
+          strong({ children }) {
+            return <strong className="font-semibold text-zinc-900 dark:text-zinc-50">{children}</strong>
+          },
+          a({ href, children }) {
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:opacity-80 font-medium"
+              >
+                {children}
+              </a>
+            )
+          },
+          blockquote({ children }) {
+            return (
+              <blockquote className="border-l-2 border-zinc-300 dark:border-zinc-700 pl-3 my-2 text-muted-foreground italic">
+                {children}
+              </blockquote>
+            )
+          },
+          hr() {
+            return <hr className="my-3 border-zinc-200 dark:border-zinc-800" />
+          },
+        }}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   )
 }
@@ -130,7 +165,14 @@ function MessageBubble({ role, text, sources }) {
           <p className="whitespace-pre-wrap break-words">{text}</p>
         ) : (
           <>
-            <FormattedContent text={text} />
+            {text ? (
+              <FormattedContent text={text} />
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span>Searching codebase & thinking...</span>
+              </div>
+            )}
             {sources?.length > 0 && (
               <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
@@ -353,7 +395,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
               <MessageBubble
                 key={message.id}
                 role={message.role}
-                text={message.text || (loading ? 'Thinking...' : '')}
+                text={message.text}
                 sources={message.sources}
               />
             ))
