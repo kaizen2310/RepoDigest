@@ -1,30 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 
 import {
   Bot,
   Send,
-  User,
   Download,
   AlertCircle,
-  AlertTriangle,
   Loader2,
   Copy,
   Check,
   Sparkles,
   FileCode2,
   ExternalLink,
+  CornerDownLeft,
+  Trash2,
 } from "lucide-react"
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { streamChatResponse } from '../services/api'
 
+/* ─── Code Block ─── */
 function CodeBlock({ language, code }) {
   const [copied, setCopied] = useState(false)
 
@@ -63,10 +65,12 @@ function CodeBlock({ language, code }) {
   )
 }
 
+/* ─── Markdown Renderer ─── */
 function FormattedContent({ text }) {
   if (!text) return null
 
   return (
+
     <div className="text-sm leading-6 break-words text-zinc-900 dark:text-zinc-100">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -144,40 +148,53 @@ function FormattedContent({ text }) {
   )
 }
 
-function MessageBubble({ role, text, sources }) {
+/* ─── Typing Indicator ─── */
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1.5 px-1 py-2">
+      <div className="flex items-center gap-0.5">
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-zinc-400" style={{ animationDelay: '0ms' }} />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-zinc-400" style={{ animationDelay: '150ms' }} />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-zinc-400" style={{ animationDelay: '300ms' }} />
+      </div>
+      <span className="text-xs text-muted-foreground ml-1">Thinking...</span>
+    </div>
+  )
+}
+
+/* ─── Message Thread ─── */
+function MessageItem({ role, text, sources, isStreaming }) {
   const isUser = role === 'user'
 
   return (
-    <div className={`flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {/* Bot avatar */}
       {!isUser && (
-        <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border bg-white text-zinc-900 shadow-xs">
-          <Bot className="h-4 w-4" />
+        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+          <Bot className="h-3.5 w-3.5" />
         </div>
       )}
-      <div
-        className={`max-w-[88%] overflow-hidden rounded-md border px-3 py-2.5 text-sm leading-6 ${
-          isUser
-            ? 'border-zinc-900 bg-zinc-900 text-white'
-            : 'border-zinc-200 bg-white text-zinc-900 shadow-2xs'
-        }`}
-      >
+
+      <div className={`max-w-[85%] ${isUser ? '' : 'min-w-0 flex-1'}`}>
         {isUser ? (
-          <p className="whitespace-pre-wrap break-words">{text}</p>
+          /* User message — pill style */
+          <div className="inline-block rounded-2xl rounded-br-sm bg-zinc-900 px-3.5 py-2 text-sm text-white">
+            <p className="whitespace-pre-wrap break-words leading-6">{text}</p>
+          </div>
         ) : (
-          <>
+          /* Bot message — clean thread style, no border box */
+          <div className="pt-0.5">
             {text ? (
               <FormattedContent text={text} />
             ) : (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                <span>Searching codebase & thinking...</span>
-              </div>
+              <TypingIndicator />
             )}
+            {/* Source citations */}
             {sources?.length > 0 && (
-              <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              <div className="mt-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
                   <FileCode2 className="h-3 w-3" />
-                  <span>Sources cited</span>
+                  <span>Sources</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {sources.map((src, idx) => (
@@ -187,12 +204,12 @@ function MessageBubble({ role, text, sources }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title={`View ${src.filePath} on GitHub`}
-                      className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 px-2 py-0.5 text-xs font-mono text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:border-zinc-300 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 px-2 py-0.5 text-xs font-mono text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:border-zinc-300 transition-colors"
                     >
                       <span className="truncate max-w-[160px] sm:max-w-[220px]">{src.filePath}</span>
                       {src.startLine != null && (
                         <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
-                          (lines {src.startLine}{src.endLine && src.endLine !== src.startLine ? `–${src.endLine}` : ''})
+                          L{src.startLine}{src.endLine && src.endLine !== src.startLine ? `–${src.endLine}` : ''}
                         </span>
                       )}
                       <ExternalLink className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
@@ -201,16 +218,17 @@ function MessageBubble({ role, text, sources }) {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
   )
 }
 
+/* ─── Status States ─── */
 function TooLargeState({ ingestError }) {
   return (
-    <div className="flex h-full flex-col justify-center gap-4 p-2">
+    <div className="flex h-full flex-col justify-center gap-4 p-4">
       <Alert className="border-amber-200 bg-amber-50">
         <Download className="h-4 w-4 text-amber-600" />
         <AlertTitle className="text-amber-800">
@@ -235,20 +253,20 @@ function TooLargeState({ ingestError }) {
 
 function ProcessingState() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-4 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-blue-200 bg-blue-50">
+    <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-blue-200 bg-blue-50">
         <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-zinc-800">
           Indexing in progress
         </p>
-        <p className="text-xs leading-5 text-muted-foreground">
-          Building vector embeddings for this repo with Gemini.
-          Indexing continues in the background.
+        <p className="text-xs leading-5 text-muted-foreground max-w-[260px]">
+          Building vector embeddings for this repo.
+          Chat will be available once indexing completes.
         </p>
       </div>
-      <Progress className="w-full" value={null} />
+      <Progress className="w-48" value={null} />
     </div>
   )
 }
@@ -264,7 +282,7 @@ function PendingState() {
 
 function FailedState() {
   return (
-    <div className="flex h-full flex-col justify-center gap-3 p-2">
+    <div className="flex h-full flex-col justify-center gap-3 p-4">
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Indexing failed</AlertTitle>
@@ -276,12 +294,14 @@ function FailedState() {
   )
 }
 
+/* ─── Constants ─── */
 const SUGGESTED_QUESTIONS = [
-  'What is this repository about and what are its key features?',
-  'What is the project structure and main entry point?',
-  'What are the core dependencies and runtime requirements?',
+  'What is this repository about?',
+  'Explain the project structure',
+  'What are the core dependencies?',
 ]
 
+/* ─── Main ChatPanel ─── */
 export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState([])
@@ -289,6 +309,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
   const [error, setError] = useState('')
 
   const bottomRef = useRef(null)
+  const scrollRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -353,79 +374,126 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
     askQuestion()
   }
 
-  function renderBody() {
-    if (ingestStatus === 'too_large') return <TooLargeState ingestError={ingestError} />
-    if (ingestStatus === 'processing') return <ProcessingState />
-    if (ingestStatus === 'failed') return <FailedState />
-    if (ingestStatus === 'pending') return <PendingState />
+  function clearChat() {
+    setMessages([])
+    setError('')
+  }
 
-    return (
-      <>
-        <div className="h-[calc(100vh-420px)] overflow-auto rounded-md border bg-zinc-50 p-3 space-y-3">
+  /* ─── Non-ready states ─── */
+  if (ingestStatus === 'too_large') return <TooLargeState ingestError={ingestError} />
+  if (ingestStatus === 'processing') return <ProcessingState />
+  if (ingestStatus === 'failed') return <FailedState />
+  if (ingestStatus === 'pending') return <PendingState />
+
+  /* ─── Chat UI ─── */
+  return (
+    <div className="flex h-full flex-col">
+
+      {/* Header — minimal */}
+      <div className="flex items-center justify-between px-1 pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 text-white">
+            <Bot className="h-3.5 w-3.5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold leading-none">Repo Chat</h2>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] text-muted-foreground">Ready</span>
+            </div>
+          </div>
+        </div>
+        {messages.length > 0 && (
+          <button
+            type="button"
+            onClick={clearChat}
+            title="Clear conversation"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            <Trash2 className="h-3 w-3" />
+            <span className="hidden sm:inline">Clear</span>
+          </button>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Messages area */}
+      <ScrollArea ref={scrollRef} className="flex-1 min-h-0">
+        <div className="px-1 py-3 space-y-4">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200/60 text-zinc-700 mb-2">
-                <Bot className="h-5 w-5" />
+            /* Empty state */
+            <div className="flex h-[calc(100vh-520px)] flex-col items-center justify-center text-center px-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 mb-3">
+                <Sparkles className="h-5 w-5" />
               </div>
-              <p className="text-sm font-semibold text-foreground">Ask anything about this codebase</p>
-              <p className="text-xs text-muted-foreground max-w-[280px] mt-1 mb-4">
-                Answers are grounded using MongoDB Atlas Vector Search & Google Gemini.
+              <p className="text-sm font-medium text-foreground">Ask anything about this codebase</p>
+              <p className="text-xs text-muted-foreground max-w-[260px] mt-1 mb-5">
+                Powered by vector search &amp; Gemini. Answers are grounded in the repository's source code.
               </p>
 
-              <div className="w-full max-w-[340px] space-y-1.5 text-left">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                  Quick Repo Insights
-                </p>
+              <div className="w-full max-w-[320px] space-y-2">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
                     key={q}
                     type="button"
                     disabled={loading || !chatReady}
                     onClick={() => askQuestion(q)}
-                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-800 shadow-2xs hover:bg-zinc-100 hover:border-zinc-300 transition-all flex items-center justify-between group text-left cursor-pointer"
+                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-xs text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 transition-all flex items-center justify-between group cursor-pointer"
                   >
                     <span>{q}</span>
-                    <Sparkles className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 ml-2" />
+                    <CornerDownLeft className="h-3 w-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
             </div>
           ) : (
             messages.map((message) => (
-              <MessageBubble
+              <MessageItem
                 key={message.id}
                 role={message.role}
                 text={message.text}
                 sources={message.sources}
+                isStreaming={loading && message.role === 'assistant' && !message.text}
               />
             ))
           )}
           <div ref={bottomRef} />
         </div>
+      </ScrollArea>
 
-        {error && (
-          <Alert variant="destructive" className="mt-3">
+      {/* Error */}
+      {error && (
+        <div className="px-1 pt-2">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        )}
+        </div>
+      )}
 
-        {messages.length > 0 && chatReady && !loading && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {SUGGESTED_QUESTIONS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => askQuestion(q)}
-                className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-200 transition-colors cursor-pointer"
-              >
-                {q.length > 34 ? q.slice(0, 32) + '...' : q}
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Suggested follow-ups — compact pills */}
+      {messages.length > 0 && chatReady && !loading && (
+        <div className="flex flex-wrap gap-1.5 px-1 pt-2">
+          {SUGGESTED_QUESTIONS.map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => askQuestion(q)}
+              className="rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1 text-[11px] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 transition-colors cursor-pointer"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
 
-        <form onSubmit={submitQuestion} className="mt-2 space-y-2">
+      {/* Input bar — sticky bottom */}
+      <div className="pt-3 mt-auto">
+        <form onSubmit={submitQuestion} className="relative">
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -435,45 +503,31 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
                 submitQuestion(e)
               }
             }}
-            placeholder="Ask about components, routes, logic..."
+            placeholder="Ask about this codebase..."
             disabled={loading || !chatReady}
-            className="min-h-20 resize-none text-sm"
+            className="min-h-[52px] max-h-32 resize-none pr-12 text-sm rounded-lg"
+            rows={1}
           />
           <Button
             type="submit"
             disabled={loading || !question.trim() || !chatReady}
-            className="w-full"
+            size="icon"
+            className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
           >
-            <Send className="mr-2 h-4 w-4" />
-            {loading ? 'Streaming answer...' : 'Ask codebase'}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </form>
-      </>
-    )
-  }
-
-  return (
-    <Card className="border shadow-none">
-      <CardContent className="flex min-h-0 flex-col p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-900 text-white">
-            <Bot className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold">Repo Chat (RAG)</h2>
-            <p className="text-xs text-muted-foreground">
-              {ingestStatus === 'ready' && 'Ready for questions'}
-              {ingestStatus === 'processing' && 'Indexing repository...'}
-              {ingestStatus === 'pending' && 'Preparing embeddings...'}
-              {ingestStatus === 'failed' && 'Indexing failed'}
-              {ingestStatus === 'too_large' && 'Repo too large for RAG'}
-            </p>
-          </div>
+        <div className="flex items-center justify-between mt-1.5 px-0.5">
+          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <CornerDownLeft className="h-2.5 w-2.5" />
+            <span><kbd className="rounded border border-zinc-200 dark:border-zinc-700 px-1 py-0.5 text-[9px] font-mono">Enter</kbd> to send · <kbd className="rounded border border-zinc-200 dark:border-zinc-700 px-1 py-0.5 text-[9px] font-mono">Shift+Enter</kbd> new line</span>
+          </p>
         </div>
-        <div className="flex-1 min-h-[300px]">
-          {renderBody()}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

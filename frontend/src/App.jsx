@@ -8,6 +8,7 @@ import DigestOutput from './components/DigestOutput'
 import RepoSummary from './components/RepoSummary'
 import ChatPanel from './components/ChatPanel'
 
+import repoDigestLogo from './assets/repodigest.svg'
 import { fetchIngestStatus, fetchRepoTree, generateDigest } from './services/api'
 
 function GitHubIcon({ className = "h-4 w-4" }) {
@@ -96,11 +97,13 @@ export default function App() {
           {/* Brand & Logo */}
           <div
             onClick={step === STEPS.DASHBOARD ? reset : undefined}
-            className={`flex items-center gap-3 select-none ${step === STEPS.DASHBOARD ? 'cursor-pointer group' : ''}`}
+            className={`flex items-center gap-2.5 select-none ${step === STEPS.DASHBOARD ? 'cursor-pointer group' : ''}`}
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 text-white shadow-xs dark:from-zinc-100 dark:via-zinc-200 dark:to-zinc-300 dark:text-zinc-900 ring-1 ring-black/10 group-hover:scale-105 transition-transform">
-              <span className="font-mono text-xs font-black tracking-tight">RD</span>
-            </div>
+            <img
+              src={repoDigestLogo}
+              alt="RepoDigest Logo"
+              className="h-8 w-8 shrink-0 rounded-lg object-contain group-hover:scale-105 transition-transform"
+            />
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight leading-none text-foreground group-hover:text-primary transition-colors">
                 RepoDigest
@@ -113,25 +116,6 @@ export default function App() {
 
           {/* Nav Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {step === STEPS.DASHBOARD && treeData && (
-              <a
-                href={`https://github.com/${treeData.owner}/${treeData.repo}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={`Open ${treeData.owner}/${treeData.repo} on GitHub`}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5 text-xs font-medium border-border/80 hover:bg-accent hover:text-accent-foreground transition-all shadow-2xs"
-                >
-                  <GitHubIcon className="h-3.5 w-3.5 text-foreground" />
-                  <span className="hidden sm:inline">View on GitHub</span>
-                  <span className="sm:hidden">Repo</span>
-                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </a>
-            )}
 
             {step === STEPS.DASHBOARD && (
               <Button
@@ -218,7 +202,7 @@ export default function App() {
       {step === STEPS.DASHBOARD && treeData && digestResult && (
         <main className="flex flex-1 flex-col">
           <RepoSummary treeData={treeData} digestResult={digestResult} />
-          <div className="grid flex-1 lg:grid-cols-2">
+          <div className="grid flex-1 lg:grid-cols-[46%_54%]">
 
             {/* Left — digest */}
             <div className="border-r bg-background">
@@ -231,8 +215,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right — chat only */}
-            <div className="flex flex-col bg-white p-4 lg:sticky lg:top-[57px] lg:max-h-[calc(100vh-57px)]">
+            {/* Right — chat */}
+            <div className="flex flex-col overflow-hidden bg-background p-4 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)]">
               <ChatPanel
                 digestId={digestId}
                 ingestStatus={ingestStatus}

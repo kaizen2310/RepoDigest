@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { GitFork, Files, FileCode2, BookCheck, Star, GitCommit, ExternalLink } from "lucide-react"
+import { GitFork, Files, FileCode2, BookCheck, Star, GitCommit, ExternalLink, Info } from "lucide-react"
 
 const TOKEN_LIMIT = 300000
 
@@ -66,12 +66,19 @@ export default function RepoSummary({ treeData, digestResult }) {
                 </Badge>
               </a>
             )}
-            <Badge variant="outline">
-              <Files className="mr-1 h-3 w-3" />{files.length} files
+            <Badge variant="outline" className="font-medium bg-muted/40">
+              <BookCheck className="mr-1.5 h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+              <span>{fileCount} files in digest</span>
             </Badge>
-            <Badge variant="outline">
-              <BookCheck className="mr-1 h-3 w-3" />{fileCount} digested
-            </Badge>
+            {files.length > fileCount && (
+              <span
+                className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground cursor-help hover:text-foreground transition-colors"
+                title="Non-code files, binary assets, lockfiles, and build artifacts are excluded to keep the digest clean and within token limits."
+              >
+                <Info className="h-3 w-3 text-amber-500" />
+                <span>{files.length - fileCount} excluded</span>
+              </span>
+            )}
             {meta.language && (
               <Badge variant="outline">
                 <FileCode2 className="mr-1 h-3 w-3" />{meta.language}

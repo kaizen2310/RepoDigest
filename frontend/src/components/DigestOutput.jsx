@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
-import { Check, Copy, Download, TriangleAlert } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Check, Copy, Download, TriangleAlert, FileText, Info } from "lucide-react"
 
 const TOKEN_LIMIT = 300000
 
@@ -34,54 +35,93 @@ export default function DigestOutput({ result, owner, repo }) {
   }
 
   return (
-    <Card className="border-0 shadow-none">
-      <CardContent className="flex flex-col gap-3 p-0">
+    <div className="flex flex-col gap-3">
 
-        {/* Over limit warning */}
-        {overLimit && (
-          <Alert variant="destructive">
-            <TriangleAlert className="h-4 w-4" />
-            <AlertDescription>
-              Digest exceeds 300k tokens and is truncated for display.
-              Download the full digest to use it.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button onClick={copyToClipboard} size="sm">
-            {copied
-              ? <><Check className="mr-2 h-3.5 w-3.5" />Copied</>
-              : <><Copy className="mr-2 h-3.5 w-3.5" />Copy digest</>
-            }
-          </Button>
-          <Button variant="outline" size="sm" onClick={downloadTxt}>
-            <Download className="mr-2 h-3.5 w-3.5" />
-            Download .txt
-          </Button>
-        </div>
-
-        {/* Token usage */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Token usage (300k limit)</span>
-            <span className={`text-xs font-medium ${overLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {result.tokenCount?.toLocaleString()} / 300,000 ({pct}%)
-            </span>
+      {/* Toolbar — title + actions */}
+      <div className="flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 text-white">
+            <FileText className="h-3.5 w-3.5" />
           </div>
-          <Progress
-            value={pct}
-            className={`h-1.5 ${overLimit ? '[&>div]:bg-destructive' : pct > 80 ? '[&>div]:bg-yellow-500' : ''}`}
-          />
+          <div>
+            <h2 className="text-sm font-semibold leading-none">Digest Output</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {result.fileCount} source files included · {result.tokenCount?.toLocaleString()} tokens
+            </p>
+          </div>
         </div>
 
-        {/* Digest */}
-        <pre className="max-h-[calc(100vh-260px)] min-h-[400px] overflow-auto rounded-md bg-zinc-950 p-4 text-left font-mono text-xs leading-6 text-zinc-200 whitespace-pre-wrap break-words">
-          {displayDigest}
-        </pre>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copyToClipboard}
+            className="h-8 gap-1.5 px-2.5 text-xs"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-emerald-600">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Copy</span>
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={downloadTxt}
+            className="h-8 gap-1.5 px-2.5 text-xs"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Download</span>
+          </Button>
+        </div>
+      </div>
 
-      </CardContent>
-    </Card>
+      <Separator className="shrink-0" />
+
+      {/* Exclusion warning notice */}
+      <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/5 px-2.5 py-1.5 text-xs text-muted-foreground shrink-0">
+        <Info className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+        <p className="text-[11px] leading-relaxed">
+          <span className="font-semibold text-foreground">Notice:</span> Some files may be excluded from this digest. Binary assets (images, fonts, audio), package lockfiles, and build artifacts (<code className="rounded bg-muted px-1 py-0.2 font-mono text-[10px]">dist</code>, <code className="rounded bg-muted px-1 py-0.2 font-mono text-[10px]">node_modules</code>) are omitted automatically to optimize for LLM context.
+        </p>
+      </div>
+
+      {/* Over limit warning */}
+      {overLimit && (
+        <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 shrink-0">
+          <TriangleAlert className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+            Digest exceeds 300k tokens — truncated for display.
+            Use <button type="button" onClick={downloadTxt} className="underline underline-offset-2 font-medium hover:text-amber-900 dark:hover:text-amber-300 cursor-pointer">Download</button> for the full digest.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Digest viewer */}
+      <div className="relative rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        {/* Viewer header bar */}
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-1.5">
+          <span className="text-[11px] font-mono text-muted-foreground">
+            {owner}/{repo}-digest.txt
+          </span>
+          <Badge variant="outline" className="text-[10px] h-4 font-mono px-1.5">
+            {pct > 100 ? '100' : pct}% of 300k limit
+          </Badge>
+        </div>
+
+        {/* Scrollable content */}
+        <ScrollArea className="h-[calc(100vh-300px)] min-h-[400px]">
+          <pre className="p-4 text-left font-mono text-xs leading-6 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words bg-white dark:bg-zinc-950">
+            {displayDigest}
+          </pre>
+        </ScrollArea>
+      </div>
+    </div>
   )
 }
