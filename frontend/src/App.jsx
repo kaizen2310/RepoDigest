@@ -9,6 +9,8 @@ import RepoSummary from './components/RepoSummary'
 import ChatPanel from './components/ChatPanel'
 
 import repoDigestLogo from './assets/repodigest.svg'
+import { track } from './lib/analytics'
+import { appLogger } from './lib/logger'
 import { fetchIngestStatus, fetchRepoTree, generateDigest } from './services/api'
 
 function GitHubIcon({ className = "h-4 w-4" }) {
@@ -59,9 +61,16 @@ export default function App() {
     return () => window.clearInterval(timer)
   }, [digestId, ingestStatus])
 
-  async function handleUrlSubmit(url) {
+  async function handleUrlSubmit(url, inputSource = 'typed') {
     setError('')
     setLoading(true)
+    appLogger.digestGenerationRequested(inputSource)
+
+    track('digest_generation_requested', {
+      input_source: inputSource,
+      repo_url: url.trim(),
+    })
+
     try {
       const tree = await fetchRepoTree(url)
       setTreeData(tree)
@@ -74,7 +83,21 @@ export default function App() {
       })
       setDigestResult({ ...result, id: result.id || result._id })
       setStep(STEPS.DASHBOARD)
+      appLogger.digestGenerationCompleted({
+        repositoryFileCount: tree.files.length,
+        digestFileCount: result.fileCount,
+        digestTokenCount: result.tokenCount,
+        servedFromCache: Boolean(result.fromCache),
+      })
+      track('digest_generation_completed', {
+        repository_file_count: tree.files.length,
+        digest_file_count: result.fileCount,
+        digest_token_count: result.tokenCount,
+        served_from_cache: Boolean(result.fromCache),
+      })
     } catch (err) {
+      appLogger.digestGenerationFailed()
+      track('digest_generation_failed')
       setError(err.response?.data?.error || 'Failed to fetch repository')
     } finally {
       setLoading(false)
@@ -184,7 +207,7 @@ export default function App() {
                         key={repo}
                         variant="outline"
                         size="sm"
-                        onClick={() => handleUrlSubmit(repo)}
+                        onClick={() => handleUrlSubmit(repo, 'example')}
                         className="font-mono text-xs"
                       >
                         {repo.replace('https://github.com/', '')}

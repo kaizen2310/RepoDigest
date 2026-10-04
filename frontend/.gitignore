@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+#posthog wizaed used claude to make integration of repodigest with it
+#posthog contains spellbook which has information about how it works 
+.posthog
+.claude
+

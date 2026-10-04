@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Check, Copy, Download, TriangleAlert, FileText, Info } from "lucide-react"
+import { track } from '../lib/analytics'
 
 const TOKEN_LIMIT = 300000
 
@@ -20,6 +21,10 @@ export default function DigestOutput({ result, owner, repo }) {
 
   function copyToClipboard() {
     navigator.clipboard.writeText(result.digest)
+    track('digest_copied', {
+      digest_file_count: result.fileCount,
+      digest_truncated: overLimit,
+    })
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -32,6 +37,10 @@ export default function DigestOutput({ result, owner, repo }) {
     a.download = `${owner}-${repo}-digest.txt`
     a.click()
     URL.revokeObjectURL(url)
+    track('digest_downloaded', {
+      digest_file_count: result.fileCount,
+      digest_truncated: overLimit,
+    })
   }
 
   return (

@@ -24,6 +24,8 @@ import {
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { track } from '../lib/analytics'
+import { appLogger } from '../lib/logger'
 import { streamChatResponse } from '../services/api'
 
 /* ─── Code Block ─── */
@@ -32,6 +34,7 @@ function CodeBlock({ language, code }) {
 
   function copyCode() {
     navigator.clipboard.writeText(code)
+    track('chat_code_copied')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -310,6 +313,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
 
   const bottomRef = useRef(null)
   const scrollRef = useRef(null)
+  const aiSessionId = useRef(crypto.randomUUID())
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -324,8 +328,15 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
     setError('')
     setQuestion('')
     setLoading(true)
+    const questionSource = typeof customQuestion === 'string' ? 'suggested' : 'typed'
+    appLogger.chatQuestionSubmitted(questionSource)
+    track('chat_question_submitted', { question_source: questionSource })
 
     const assistantId = crypto.randomUUID()
+    const aiTraceId = crypto.randomUUID()
+    const startedAt = window.performance.now()
+    let firstTokenAt
+    let responseText = ''
     setMessages((current) => [
       ...current,
       { id: crypto.randomUUID(), role: 'user', text: targetQuestion },
@@ -337,6 +348,8 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
         digestId,
         question: targetQuestion,
         onText: (text) => {
+          if (firstTokenAt === undefined) firstTokenAt = window.performance.now()
+          responseText += text
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantId
@@ -355,7 +368,39 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
           )
         },
       })
+      track('$ai_generation', {
+        $ai_trace_id: aiTraceId,
+        $ai_session_id: aiSessionId.current,
+        $ai_provider: 'gemini',
+        $ai_input: [{ role: 'user', content: targetQuestion }],
+        $ai_output_choices: [{ role: 'assistant', content: responseText }],
+        $ai_latency: (window.performance.now() - startedAt) / 1000,
+        $ai_stream: true,
+        ...(firstTokenAt === undefined ? {} : {
+          $ai_time_to_first_token: (firstTokenAt - startedAt) / 1000,
+        }),
+      })
+      appLogger.chatResponseCompleted(questionSource)
+      track('chat_response_completed', { question_source: questionSource })
     } catch (err) {
+      track('$ai_generation', {
+        $ai_trace_id: aiTraceId,
+        $ai_session_id: aiSessionId.current,
+        $ai_provider: 'gemini',
+        $ai_input: [{ role: 'user', content: targetQuestion }],
+        $ai_latency: (window.performance.now() - startedAt) / 1000,
+        $ai_stream: true,
+        $ai_is_error: true,
+        $ai_error: err.message,
+        ...(responseText ? {
+          $ai_output_choices: [{ role: 'assistant', content: responseText }],
+        } : {}),
+        ...(firstTokenAt === undefined ? {} : {
+          $ai_time_to_first_token: (firstTokenAt - startedAt) / 1000,
+        }),
+      })
+      appLogger.chatResponseFailed(questionSource)
+      track('chat_response_failed', { question_source: questionSource })
       setError(err.message || 'Chat failed')
       setMessages((current) =>
         current.map((message) =>
@@ -375,6 +420,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
   }
 
   function clearChat() {
+    aiSessionId.current = crypto.randomUUID()
     setMessages([])
     setError('')
   }
