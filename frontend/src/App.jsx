@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, ExternalLink, Plus } from "lucide-react"
+import { AlertCircle, ExternalLink, Moon, Plus, Sun } from "lucide-react"
 
 import RepoInput from './components/RepoInput'
 
@@ -19,6 +20,25 @@ function DashboardLoading() {
     <main className="flex flex-1 items-center justify-center p-8" aria-live="polite">
       <p className="text-sm text-muted-foreground">Loading your repository digest…</p>
     </main>
+  )
+}
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      className="text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+    >
+      {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+    </Button>
   )
 }
 
@@ -149,6 +169,8 @@ export default function App() {
           {/* Nav Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
 
+            <ThemeToggle />
+
             {step === STEPS.DASHBOARD && (
               <Button
                 variant="ghost"
@@ -189,18 +211,22 @@ export default function App() {
 
       {/* LANDING */}
       {step === STEPS.IDLE && (
-        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6 sm:py-24">
-          <div className="w-full max-w-2xl">
-            <h1 className="mb-3 text-4xl font-black tracking-tight sm:text-5xl">
-              RepoDigest
+        <main className="landing-grain relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-16 text-center sm:px-6 sm:py-24">
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_42%)]" />
+          <div className="relative w-full max-w-2xl">
+            <p className="mb-5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+              Repository context, distilled
+            </p>
+            <h1 className="mb-4 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+              Understand a codebase before you open the first file.
             </h1>
-            <p className="mx-auto mb-8 max-w-xl text-base leading-7 text-muted-foreground">
-              Generate clean, structured LLM-ready digests from any GitHub repository.
+            <p className="mx-auto mb-8 max-w-lg text-base leading-7 text-muted-foreground">
+              Paste a GitHub URL to get the architecture, key files, and a chat grounded in the repository.
             </p>
 
             <RepoInput onSubmit={handleUrlSubmit} loading={loading} />
 
-            <div className="mt-6 min-h-[60px]">
+            <div className="mt-7 min-h-[60px]">
               {loading ? (
                 <p className="text-sm text-muted-foreground">
                   Fetching repository — large repos may take 10–20 seconds...
@@ -208,7 +234,7 @@ export default function App() {
               ) : (
                 <div>
                   <p className="mb-3 text-xs text-muted-foreground">
-                    Try an example:
+                    Try a public repository
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {EXAMPLE_REPOS.map((repo) => (
@@ -217,7 +243,7 @@ export default function App() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleUrlSubmit(repo, 'example')}
-                        className="font-mono text-xs"
+                        className="bg-background/45 font-mono text-xs backdrop-blur-sm"
                       >
                         {repo.replace('https://github.com/', '')}
                       </Button>

@@ -1,0 +1,73 @@
+<div id="repodigest-landing-concepts" class="viz-carousel" aria-label="RepoDigest landing page concepts">
+  <style>
+    #repodigest-landing-concepts { color-scheme: light dark; }
+    #repodigest-landing-concepts [data-variant] { min-height: 620px; }
+    #repodigest-landing-concepts .rd-page { --rd-bg: light-dark(#fbfcff, #101217); --rd-panel: light-dark(#ffffff, #191c23); --rd-text: light-dark(#151922, #f4f7fb); --rd-muted: light-dark(#5d687a, #aab4c5); --rd-line: light-dark(#e1e6ee, #2b303a); --rd-blue: light-dark(#2563eb, #75a7ff); --rd-blue-soft: light-dark(#eaf2ff, #182a49); background: var(--rd-bg); color: var(--rd-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+    #repodigest-landing-concepts .rd-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(18px, 5vw, 64px); border-bottom: 1px solid var(--rd-line); }
+    #repodigest-landing-concepts .rd-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.02em; }
+    #repodigest-landing-concepts .rd-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: #18181b; color: #fff; }
+    #repodigest-landing-concepts .rd-nav a { color: var(--rd-muted); font-size: 14px; text-decoration: none; }
+    #repodigest-landing-concepts .rd-hero { max-width: 1180px; margin: 0 auto; padding: clamp(52px, 8vw, 100px) clamp(20px, 5vw, 64px) 64px; }
+    #repodigest-landing-concepts .rd-eyebrow { display: inline-flex; gap: 7px; align-items: center; color: var(--rd-blue); font-size: 14px; font-weight: 600; }
+    #repodigest-landing-concepts h1 { max-width: 800px; margin: 16px 0; font-size: clamp(38px, 6vw, 68px); line-height: 1.02; letter-spacing: -.055em; font-weight: 650; }
+    #repodigest-landing-concepts .rd-lede { max-width: 640px; margin: 0; color: var(--rd-muted); font-size: clamp(17px, 2vw, 20px); line-height: 1.55; }
+    #repodigest-landing-concepts .rd-input-row { display: flex; gap: 10px; max-width: 670px; margin-top: 30px; padding: 7px; border: 1px solid var(--rd-line); border-radius: 12px; background: var(--rd-panel); box-shadow: 0 14px 32px color-mix(in srgb, var(--rd-text) 8%, transparent); }
+    #repodigest-landing-concepts .rd-input-row span { flex: 1; min-width: 0; padding: 12px 10px; color: var(--rd-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #repodigest-landing-concepts .rd-primary { flex: 0 0 auto; border: 0; border-radius: 8px; padding: 12px 16px; background: var(--rd-blue); color: white; font: inherit; font-size: 14px; font-weight: 650; }
+    #repodigest-landing-concepts .rd-proof { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; color: var(--rd-muted); font-size: 13px; }
+    #repodigest-landing-concepts .rd-proof span { display: inline-flex; align-items: center; gap: 6px; }
+    #repodigest-landing-concepts .rd-demo { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 0; margin-top: 64px; overflow: hidden; border: 1px solid var(--rd-line); border-radius: 16px; background: var(--rd-panel); box-shadow: 0 24px 60px color-mix(in srgb, var(--rd-text) 10%, transparent); }
+    #repodigest-landing-concepts .rd-demo-side { padding: 26px; border-right: 1px solid var(--rd-line); }
+    #repodigest-landing-concepts .rd-demo-side h2, #repodigest-landing-concepts .rd-output h2 { margin: 0 0 8px; font-size: 15px; }
+    #repodigest-landing-concepts .rd-demo-side p { margin: 0 0 22px; color: var(--rd-muted); font-size: 14px; line-height: 1.5; }
+    #repodigest-landing-concepts .rd-steps { display: grid; gap: 16px; }
+    #repodigest-landing-concepts .rd-step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; font-size: 14px; }
+    #repodigest-landing-concepts .rd-number { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--rd-blue-soft); color: var(--rd-blue); font-size: 12px; font-weight: 700; }
+    #repodigest-landing-concepts .rd-step strong { display: block; margin-bottom: 3px; font-weight: 650; }
+    #repodigest-landing-concepts .rd-step small { color: var(--rd-muted); font-size: 12px; line-height: 1.4; }
+    #repodigest-landing-concepts .rd-output { padding: 26px; background: color-mix(in srgb, var(--rd-bg) 70%, var(--rd-panel)); }
+    #repodigest-landing-concepts .rd-output-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--rd-line); }
+    #repodigest-landing-concepts .rd-tag { padding: 4px 7px; border-radius: 6px; background: var(--rd-blue-soft); color: var(--rd-blue); font-size: 11px; font-weight: 650; }
+    #repodigest-landing-concepts .rd-code { margin-top: 16px; padding: 18px; border-radius: 10px; background: light-dark(#171a20, #0c0e12); color: #dbeafe; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.75; }
+    #repodigest-landing-concepts .rd-code .muted { color: #8292a8; } #repodigest-landing-concepts .rd-code .blue { color: #93c5fd; } #repodigest-landing-concepts .rd-code .green { color: #86efac; }
+    #repodigest-landing-concepts .rd-outcomes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 56px; }
+    #repodigest-landing-concepts .rd-outcome { padding: 2px 0; }
+    #repodigest-landing-concepts .rd-outcome i { color: var(--rd-blue); } #repodigest-landing-concepts .rd-outcome strong { display: block; margin: 9px 0 5px; font-size: 15px; } #repodigest-landing-concepts .rd-outcome p { margin: 0; color: var(--rd-muted); font-size: 13px; line-height: 1.5; }
+    #repodigest-landing-concepts .rd-trust-hero { display: grid; grid-template-columns: 1fr .95fr; align-items: center; gap: clamp(32px, 6vw, 90px); }
+    #repodigest-landing-concepts .rd-flow { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--rd-line); border-radius: 16px; background: var(--rd-panel); }
+    #repodigest-landing-concepts .rd-flow-card { display: flex; gap: 12px; align-items: center; padding: 16px; border-radius: 10px; background: var(--rd-bg); }
+    #repodigest-landing-concepts .rd-flow-icon { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 9px; background: var(--rd-blue-soft); color: var(--rd-blue); }
+    #repodigest-landing-concepts .rd-flow-card strong { display: block; font-size: 14px; } #repodigest-landing-concepts .rd-flow-card small { color: var(--rd-muted); font-size: 12px; }
+    #repodigest-landing-concepts .rd-arrow { margin: -2px 0 -2px 33px; color: var(--rd-muted); }
+    #repodigest-landing-concepts .rd-trust-strip { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--rd-line); color: var(--rd-muted); font-size: 13px; }
+    @media (max-width: 680px) { #repodigest-landing-concepts [data-variant] { min-height: 740px; } #repodigest-landing-concepts .rd-demo, #repodigest-landing-concepts .rd-trust-hero { grid-template-columns: 1fr; } #repodigest-landing-concepts .rd-demo-side { border-right: 0; border-bottom: 1px solid var(--rd-line); } #repodigest-landing-concepts .rd-outcomes { grid-template-columns: 1fr; gap: 18px; } #repodigest-landing-concepts .rd-input-row { flex-direction: column; } #repodigest-landing-concepts .rd-primary { width: 100%; } }
+  </style>
+
+  <section data-variant="Action-first" aria-label="Action-first landing page">
+    <div class="rd-page">
+      <nav class="rd-nav"><div class="rd-brand"><span class="rd-mark"><i data-lucide="files" aria-hidden="true"></i></span>RepoDigest</div><a href="#">How it works <i data-lucide="arrow-right" aria-hidden="true"></i></a></nav>
+      <main class="rd-hero">
+        <div class="rd-eyebrow"><i data-lucide="sparkles" aria-hidden="true"></i> Understand any GitHub repository, faster</div>
+        <h1>Turn a codebase into an AI-ready brief.</h1>
+        <p class="rd-lede">Paste a public GitHub URL. RepoDigest reads the repository, creates a structured digest, and gives you a chat interface grounded in its code.</p>
+        <div class="rd-input-row" aria-label="Repository URL input preview"><span>https://github.com/vercel/next.js</span><button class="rd-primary" type="button">Create a digest</button></div>
+        <div class="rd-proof"><span><i data-lucide="check" aria-hidden="true"></i> Public GitHub repos</span><span><i data-lucide="check" aria-hidden="true"></i> No setup required</span><span><i data-lucide="check" aria-hidden="true"></i> Built for developers and AI tools</span></div>
+        <div class="rd-demo">
+          <div class="rd-demo-side"><h2>From URL to understanding</h2><p>Make the workflow visible before asking for a commitment.</p><div class="rd-steps"><div class="rd-step"><span class="rd-number">1</span><div><strong>Paste a repository URL</strong><small>Start with any public GitHub project.</small></div></div><div class="rd-step"><span class="rd-number">2</span><div><strong>Get a structured digest</strong><small>Key files, architecture, dependencies, and context.</small></div></div><div class="rd-step"><span class="rd-number">3</span><div><strong>Ask questions with code context</strong><small>Explore without manually hunting through the tree.</small></div></div></div></div>
+          <div class="rd-output"><div class="rd-output-bar"><h2>next.js — repository digest</h2><span class="rd-tag">Ready to chat</span></div><div class="rd-code"><span class="muted"># What this project does</span><br><span class="blue">Next.js</span> is a React framework for full-stack web apps.<br><br><span class="muted"># Architecture</span><br><span class="green">app/</span> Route-based application code<br><span class="green">packages/</span> Core framework modules<br><span class="green">test/</span> Integration and unit coverage<br><br><span class="muted"># Ask RepoDigest</span><br>How does routing work in this repository?</div></div>
+        </div>
+        <div class="rd-outcomes"><div class="rd-outcome"><i data-lucide="scan-search" aria-hidden="true"></i><strong>Onboard faster</strong><p>Get the mental model before reading every file.</p></div><div class="rd-outcome"><i data-lucide="messages-square" aria-hidden="true"></i><strong>Ask better questions</strong><p>Keep repository context in the conversation.</p></div><div class="rd-outcome"><i data-lucide="file-output" aria-hidden="true"></i><strong>Bring context anywhere</strong><p>Copy or download an LLM-ready digest.</p></div></div>
+      </main>
+    </div>
+  </section>
+
+  <section data-variant="Workflow-first" aria-label="Workflow-first landing page" hidden>
+    <div class="rd-page">
+      <nav class="rd-nav"><div class="rd-brand"><span class="rd-mark"><i data-lucide="files" aria-hidden="true"></i></span>RepoDigest</div><a href="#">Open app <i data-lucide="arrow-right" aria-hidden="true"></i></a></nav>
+      <main class="rd-hero rd-trust-hero">
+        <div><div class="rd-eyebrow"><i data-lucide="braces" aria-hidden="true"></i> GitHub repository intelligence</div><h1>Stop reading a codebase from the outside in.</h1><p class="rd-lede">RepoDigest gives developers and AI assistants the context they need to understand an unfamiliar repository: its architecture, important files, and the reasoning behind the code.</p><div class="rd-input-row" aria-label="Repository URL input preview"><span>Paste a public GitHub repository URL</span><button class="rd-primary" type="button">Analyze repository</button></div><div class="rd-trust-strip"><span>✓ Focused on source code</span><span>✓ Works with public repos</span><span>✓ Digest available to download</span></div></div>
+        <div class="rd-flow" aria-label="RepoDigest workflow"><div class="rd-flow-card"><span class="rd-flow-icon"><i data-lucide="github" aria-hidden="true"></i></span><div><strong>A GitHub repository</strong><small>You provide the URL and branch context.</small></div></div><div class="rd-arrow"><i data-lucide="arrow-down" aria-hidden="true"></i></div><div class="rd-flow-card"><span class="rd-flow-icon"><i data-lucide="file-search" aria-hidden="true"></i></span><div><strong>A clean repository digest</strong><small>Structure, dependencies, purpose, and code context.</small></div></div><div class="rd-arrow"><i data-lucide="arrow-down" aria-hidden="true"></i></div><div class="rd-flow-card"><span class="rd-flow-icon"><i data-lucide="bot-message-square" aria-hidden="true"></i></span><div><strong>Answers grounded in the code</strong><small>Explore design decisions and implementation details.</small></div></div></div>
+      </main>
+    </div>
+  </section>
+</div>
