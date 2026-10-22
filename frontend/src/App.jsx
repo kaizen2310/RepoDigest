@@ -1,17 +1,26 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, ExternalLink, Plus } from "lucide-react"
 
 import RepoInput from './components/RepoInput'
-import DigestOutput from './components/DigestOutput'
-import RepoSummary from './components/RepoSummary'
-import ChatPanel from './components/ChatPanel'
 
-import repoDigestLogo from './assets/repodigest.svg'
+import repoDigestLogo from './assets/repodigest-mark.svg'
 import { track } from './lib/analytics'
 import { appLogger } from './lib/logger'
 import { fetchIngestStatus, fetchRepoTree, generateDigest } from './services/api'
+
+const RepoSummary = lazy(() => import('./components/RepoSummary'))
+const DigestOutput = lazy(() => import('./components/DigestOutput'))
+const ChatPanel = lazy(() => import('./components/ChatPanel'))
+
+function DashboardLoading() {
+  return (
+    <main className="flex flex-1 items-center justify-center p-8" aria-live="polite">
+      <p className="text-sm text-muted-foreground">Loading your repository digest…</p>
+    </main>
+  )
+}
 
 function GitHubIcon({ className = "h-4 w-4" }) {
   return (
@@ -54,7 +63,7 @@ export default function App() {
       try {
         const latest = await fetchIngestStatus(digestId)
         setDigestResult((current) => ({ ...current, ...latest }))
-      } catch (err) {
+      } catch {
         setError('Failed to refresh status')
       }
     }, 2500)
@@ -223,9 +232,10 @@ export default function App() {
 
       {/* DASHBOARD */}
       {step === STEPS.DASHBOARD && treeData && digestResult && (
-        <main className="flex flex-1 flex-col">
-          <RepoSummary treeData={treeData} digestResult={digestResult} />
-          <div className="grid flex-1 lg:grid-cols-[46%_54%]">
+        <Suspense fallback={<DashboardLoading />}>
+          <main className="flex flex-1 flex-col">
+            <RepoSummary treeData={treeData} digestResult={digestResult} />
+            <div className="grid flex-1 lg:grid-cols-[46%_54%]">
 
             {/* Left — digest */}
             <div className="border-r bg-background">
@@ -247,8 +257,9 @@ export default function App() {
               />
             </div>
 
-          </div>
-        </main>
+            </div>
+          </main>
+        </Suspense>
       )}
     </div>
   )

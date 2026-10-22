@@ -1,8 +1,8 @@
-import posthog, { isPosthogEnabled } from './posthog.js'
+import { isPosthogEnabled, logPosthogEvent } from './posthog.js'
 
 function emit(level, message, attributes) {
   if (isPosthogEnabled) {
-    posthog.logger[level](message, attributes)
+    logPosthogEvent(level, message, attributes)
   }
 }
 
