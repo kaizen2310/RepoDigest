@@ -40,13 +40,13 @@ function CodeBlock({ language, code }) {
   }
 
   return (
-    <div className="my-2 overflow-hidden rounded-md border border-zinc-800 bg-zinc-950 text-zinc-100">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-1 text-xs text-zinc-400">
+    <div className="my-2 overflow-hidden rounded-md border border-border bg-muted/50 text-foreground dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+      <div className="flex items-center justify-between border-b border-border px-3 py-1 text-xs text-muted-foreground dark:border-zinc-800 dark:text-zinc-400">
         <span className="font-mono">{language || 'code'}</span>
         <button
           type="button"
           onClick={copyCode}
-          className="flex items-center gap-1 hover:text-zinc-200 transition-colors cursor-pointer"
+          className="flex items-center gap-1 transition-colors hover:text-foreground cursor-pointer"
         >
           {copied ? (
             <>
@@ -181,7 +181,7 @@ function MessageItem({ role, text, sources, isStreaming }) {
       <div className={`max-w-[85%] ${isUser ? '' : 'min-w-0 flex-1'}`}>
         {isUser ? (
           /* User message — pill style */
-          <div className="inline-block rounded-2xl rounded-br-sm bg-zinc-900 px-3.5 py-2 text-sm text-white">
+          <div className="inline-block rounded-2xl rounded-br-sm border border-border bg-muted/70 px-3.5 py-2 text-sm text-foreground dark:border-transparent dark:bg-primary dark:text-primary-foreground">
             <p className="whitespace-pre-wrap break-words leading-6">{text}</p>
           </div>
         ) : (
@@ -438,7 +438,7 @@ export default function ChatPanel({ digestId, ingestStatus, ingestError }) {
       {/* Header — minimal */}
       <div className="flex items-center justify-between px-1 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-foreground dark:bg-zinc-800 dark:text-zinc-100">
             <Bot className="h-3.5 w-3.5" />
           </div>
           <div>

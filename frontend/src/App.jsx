@@ -6,7 +6,6 @@ import { AlertCircle, ExternalLink, Moon, Plus, Sun } from "lucide-react"
 
 import RepoInput from './components/RepoInput'
 
-import repoDigestLogo from './assets/repodigest-mark.svg'
 import { track } from './lib/analytics'
 import { appLogger } from './lib/logger'
 import { fetchIngestStatus, fetchRepoTree, generateDigest } from './services/api'
@@ -39,6 +38,36 @@ function ThemeToggle() {
     >
       {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
     </Button>
+  )
+}
+
+const REPOSITORY_PREPARATION_STEPS = [
+  'Reading the repository structure',
+  'Mapping the important files',
+  'Preparing your codebase context',
+]
+
+function RepositoryPreparationState() {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const activeStep = Math.min(Math.floor(elapsedSeconds / 5), REPOSITORY_PREPARATION_STEPS.length - 1)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setElapsedSeconds((current) => current + 1), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return (
+    <div role="status" aria-live="polite" className="mx-auto max-w-sm text-left">
+      <div className="repository-progress mb-3 h-1 overflow-hidden rounded-full bg-border/70">
+        <span className="repository-progress-indicator block h-full w-2/5 rounded-full bg-foreground/70" />
+      </div>
+      <p className="text-sm font-medium text-foreground">
+        {REPOSITORY_PREPARATION_STEPS[activeStep]}
+      </p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+        This usually takes 10–20 seconds. Keep this tab open while we prepare your digest.
+      </p>
+    </div>
   )
 }
 
@@ -152,9 +181,9 @@ export default function App() {
             className={`flex items-center gap-2.5 select-none ${step === STEPS.DASHBOARD ? 'cursor-pointer group' : ''}`}
           >
             <img
-              src={repoDigestLogo}
-              alt="RepoDigest Logo"
-              className="h-8 w-8 shrink-0 rounded-lg object-contain group-hover:scale-105 transition-transform"
+              src="/repodigest-mark.svg"
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-lg object-contain shadow-sm ring-1 ring-border/70 group-hover:scale-105 transition-transform"
             />
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight leading-none text-foreground group-hover:text-primary transition-colors">
@@ -212,7 +241,6 @@ export default function App() {
       {/* LANDING */}
       {step === STEPS.IDLE && (
         <main className="landing-grain relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-16 text-center sm:px-6 sm:py-24">
-          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_42%)]" />
           <div className="relative w-full max-w-2xl">
             <p className="mb-5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
               Repository context, distilled
@@ -228,9 +256,12 @@ export default function App() {
 
             <div className="mt-7 min-h-[60px]">
               {loading ? (
-                <p className="text-sm text-muted-foreground">
+                <>
+                  <RepositoryPreparationState />
+                  <p aria-hidden="true" className="hidden">
                   Fetching repository — large repos may take 10–20 seconds...
-                </p>
+                  </p>
+                </>
               ) : (
                 <div>
                   <p className="mb-3 text-xs text-muted-foreground">

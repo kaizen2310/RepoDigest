@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
   <title>RepoDigest</title>
-  <rect width="64" height="64" rx="14" fill="#18181b"/>
-  <path fill="#60a5fa" d="M16 15h24a8 8 0 0 1 8 8v26H24a8 8 0 0 1-8-8V15Z"/>
-  <path fill="#dbeafe" d="M20 19h20a4 4 0 0 1 4 4v22H24a4 4 0 0 1-4-4V19Z"/>
-  <path fill="#2563eb" d="M26 26h12v3H26zm0 7h12v3H26zm0 7h8v3h-8z"/>
+  <rect width="64" height="64" rx="14" fill="#f4f4f5"/>
+  <path fill="#18181b" d="M20 17h24v6H20zm0 12h24v6H20zm0 12h16v6H20z"/>
 </svg>

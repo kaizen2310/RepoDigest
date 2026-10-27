@@ -49,7 +49,7 @@ export default function DigestOutput({ result, owner, repo }) {
       {/* Toolbar — title + actions */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-foreground dark:bg-zinc-800 dark:text-zinc-100">
             <FileText className="h-3.5 w-3.5" />
           </div>
           <div>
@@ -126,7 +126,7 @@ export default function DigestOutput({ result, owner, repo }) {
 
         {/* Scrollable content */}
         <ScrollArea className="h-[calc(100vh-300px)] min-h-[400px]">
-          <pre className="p-4 text-left font-mono text-xs leading-6 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words bg-white dark:bg-zinc-950">
+          <pre className="bg-muted/30 p-4 text-left font-mono text-xs leading-6 text-foreground whitespace-pre-wrap break-words dark:bg-zinc-950 dark:text-zinc-200">
             {displayDigest}
           </pre>
         </ScrollArea>

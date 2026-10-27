@@ -166,8 +166,8 @@ body,
 .landing-grain {
   background-color: var(--background);
   background-image:
-    radial-gradient(circle at 20% 15%, oklch(0.72 0.08 255 / 12%), transparent 30%),
-    radial-gradient(circle at 85% 80%, oklch(0.74 0.06 155 / 10%), transparent 34%);
+    radial-gradient(ellipse 72% 46% at 50% -12%, color-mix(in oklab, var(--foreground) 4%, transparent), transparent 72%),
+    radial-gradient(circle at 0 100%, color-mix(in oklab, var(--foreground) 2%, transparent), transparent 36%);
 }
 
 .landing-grain::before {
@@ -175,6 +175,15 @@ body,
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.045;
+  opacity: 0.022;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+}
+
+@keyframes repository-progress {
+  from { transform: translateX(-125%); }
+  to { transform: translateX(350%); }
+}
+
+.repository-progress-indicator {
+  animation: repository-progress 1.8s ease-in-out infinite;
 }
